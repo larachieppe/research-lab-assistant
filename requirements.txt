@@ -1,0 +1,7 @@
+langgraph==0.6.8
+anthropic==0.71.0
+requests==2.32.4
+python-dotenv==1.1.1
+rich==14.2.0
+tenacity==9.1.2
+pytest==8.4.2

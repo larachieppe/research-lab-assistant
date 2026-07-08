@@ -1,0 +1,92 @@
+"""Wires the four agents into a linear LangGraph pipeline:
+
+    START -> planner -> search -> extract -> synthesize -> END
+
+Search and extraction fan out across queries/papers with a thread pool -
+each is many independent I/O-bound calls (HTTP to PubMed/arXiv, or to
+Claude), so plain concurrency is simpler than LangGraph's Send API here and
+keeps the graph itself easy to read.
+"""
+
+from __future__ import annotations
+
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+from langgraph.graph import END, START, StateGraph
+
+from src.agents.extractor import extract_findings
+from src.agents.planner import generate_search_queries
+from src.agents.synthesizer import synthesize_summary
+from src.config import load_settings
+from src.state import AgentState, Finding, Paper
+from src.tools.arxiv import search_arxiv
+from src.tools.dedupe import dedupe_papers
+from src.tools.pubmed import search_pubmed
+
+
+def planner_node(state: AgentState) -> dict:
+    settings = load_settings()
+    max_queries = state.get("max_queries", settings.max_search_queries)
+    queries = generate_search_queries(state["question"], max_queries=max_queries)
+    return {"search_queries": queries}
+
+
+def search_node(state: AgentState) -> dict:
+    settings = load_settings()
+    queries = state["search_queries"]
+    max_papers = state.get("max_papers", settings.max_papers)
+    per_query_limit = max(2, max_papers // max(len(queries), 1))
+
+    all_papers: list[Paper] = []
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = []
+        for query in queries:
+            futures.append(executor.submit(search_pubmed, query, per_query_limit))
+            futures.append(executor.submit(search_arxiv, query, per_query_limit))
+        for future in futures:
+            try:
+                all_papers.extend(future.result())
+            except Exception:
+                # Tolerate a single source/query failing (rate limit, timeout, etc.)
+                # rather than aborting the whole pipeline over one bad call.
+                continue
+
+    return {"papers": dedupe_papers(all_papers)[:max_papers]}
+
+
+def extract_node(state: AgentState) -> dict:
+    question = state["question"]
+    papers = state["papers"]
+
+    findings: list[Finding] = []
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        future_to_paper = {executor.submit(extract_findings, question, paper): paper for paper in papers}
+        for future in as_completed(future_to_paper):
+            paper = future_to_paper[future]
+            try:
+                findings.append(future.result())
+            except Exception:
+                findings.append(Finding(paper_id=paper.id, claims=[]))
+
+    return {"findings": findings}
+
+
+def synthesize_node(state: AgentState) -> dict:
+    summary = synthesize_summary(state["question"], state["papers"], state["findings"])
+    return {"summary": summary}
+
+
+def build_graph():
+    graph = StateGraph(AgentState)
+    graph.add_node("planner", planner_node)
+    graph.add_node("search", search_node)
+    graph.add_node("extract", extract_node)
+    graph.add_node("synthesize", synthesize_node)
+
+    graph.add_edge(START, "planner")
+    graph.add_edge("planner", "search")
+    graph.add_edge("search", "extract")
+    graph.add_edge("extract", "synthesize")
+    graph.add_edge("synthesize", END)
+
+    return graph.compile()
