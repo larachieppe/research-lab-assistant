@@ -6,14 +6,17 @@ papers, and synthesizes a cited literature summary — orchestrated as a
 [LangGraph](https://github.com/langchain-ai/langgraph) pipeline.
 
 ```
-START -> planner -> search -> extract -> synthesize -> END
+START -> planner -> search -> filter -> extract -> synthesize -> END
 ```
 
 - **planner** — Claude turns your question into 2-4 targeted search queries.
 - **search** — queries PubMed (NCBI E-utilities) and arXiv (Atom API) in
   parallel, then dedupes results across sources.
+- **filter** — a single batched Claude call screens all retrieved papers by
+  title + abstract snippet, dropping the ones unlikely to be relevant before
+  the more expensive per-paper extraction step runs.
 - **extract** — Claude pulls the findings relevant to your question out of
-  each paper's abstract, run concurrently across papers.
+  each remaining paper's full abstract, run concurrently across papers.
 - **synthesize** — Claude writes a short synthesis citing evidence inline
   (`[1]`, `[2]`, ...), with a deterministically-built reference list appended
   so citation numbers always line up with the sources.

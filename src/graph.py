@@ -1,6 +1,6 @@
-"""Wires the four agents into a linear LangGraph pipeline:
+"""Wires the five agents into a linear LangGraph pipeline:
 
-    START -> planner -> search -> extract -> synthesize -> END
+    START -> planner -> search -> filter -> extract -> synthesize -> END
 
 Search and extraction fan out across queries/papers with a thread pool -
 each is many independent I/O-bound calls (HTTP to PubMed/arXiv, or to
@@ -15,6 +15,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from langgraph.graph import END, START, StateGraph
 
 from src.agents.extractor import extract_findings
+from src.agents.filter import filter_relevant_papers
 from src.agents.planner import generate_search_queries
 from src.agents.synthesizer import synthesize_summary
 from src.config import load_settings
@@ -54,6 +55,25 @@ def search_node(state: AgentState) -> dict:
     return {"papers": dedupe_papers(all_papers)[:max_papers]}
 
 
+def filter_node(state: AgentState) -> dict:
+    papers = state["papers"]
+    try:
+        relevant_ids = filter_relevant_papers(state["question"], papers)
+    except Exception:
+        # Fail open: if screening itself breaks, run extraction on everything
+        # rather than silently dropping all candidates.
+        return {}
+
+    if not relevant_ids:
+        # A screening call that flags *zero* of several candidates as
+        # relevant is more likely a model/prompt hiccup than ground truth -
+        # fail open here too rather than guaranteeing an empty synthesis.
+        return {}
+
+    id_set = set(relevant_ids)
+    return {"papers": [p for p in papers if p.id in id_set]}
+
+
 def extract_node(state: AgentState) -> dict:
     question = state["question"]
     papers = state["papers"]
@@ -80,12 +100,14 @@ def build_graph():
     graph = StateGraph(AgentState)
     graph.add_node("planner", planner_node)
     graph.add_node("search", search_node)
+    graph.add_node("filter", filter_node)
     graph.add_node("extract", extract_node)
     graph.add_node("synthesize", synthesize_node)
 
     graph.add_edge(START, "planner")
     graph.add_edge("planner", "search")
-    graph.add_edge("search", "extract")
+    graph.add_edge("search", "filter")
+    graph.add_edge("filter", "extract")
     graph.add_edge("extract", "synthesize")
     graph.add_edge("synthesize", END)
 
