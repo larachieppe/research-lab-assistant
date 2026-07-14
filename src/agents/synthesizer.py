@@ -10,8 +10,15 @@ from __future__ import annotations
 from src.llm import call_text
 from src.state import Finding, Paper
 
-_SYSTEM = """You are a scientific writing assistant. Write a concise literature
-synthesis that answers the research question using only the evidence provided.
+_SYSTEM = """You are explaining research findings to a smart, curious reader
+who is not a specialist in this field. Write a clear, plain-language answer
+to the research question using only the evidence provided.
+
+Avoid jargon. If a technical term is truly necessary, briefly explain what
+it means in a few plain words the first time you use it. Prefer short,
+direct sentences over dense academic phrasing - write to be understood, not
+to sound scholarly.
+
 Cite evidence inline with bracketed numbers like [1], [2] that EXACTLY match
 the numbers given in the evidence list - do not renumber, invent, or omit
 citations. Do not include a references section yourself; just the body text."""
@@ -41,7 +48,7 @@ def synthesize_summary(question: str, papers: list[Paper], findings: list[Findin
         user=(
             f"Research question: {question}\n\n"
             f"Evidence extracted from papers:\n{evidence_block}\n\n"
-            "Write a concise (3-6 paragraph) literature synthesis answering the "
+            "Write a clear, plain-language answer (2-4 short paragraphs) to the "
             "research question, citing evidence inline with [n] matching the "
             "numbers above."
         ),
