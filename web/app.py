@@ -7,6 +7,8 @@ nothing here is reachable without logging in at /login first.
 
 from __future__ import annotations
 
+import secrets
+import sys
 import uuid
 from pathlib import Path
 
@@ -25,14 +27,22 @@ from web.templating import templates
 WEB_DIR = Path(__file__).resolve().parent
 
 _settings = load_settings()
-if not _settings.session_secret:
-    raise RuntimeError(
-        "SESSION_SECRET is not set. Generate one with: "
-        "python -c \"import secrets; print(secrets.token_hex(32))\""
+_session_secret = _settings.session_secret
+if not _session_secret:
+    # Fall back to a secret generated fresh at process start rather than
+    # crashing the whole deploy over a missing env var - the only cost is
+    # that everyone gets logged out whenever the process restarts, which
+    # is a minor inconvenience, not a broken site.
+    print(
+        "WARNING: SESSION_SECRET is not set - generating a temporary one for "
+        "this process. Sessions won't survive a restart until you set "
+        "SESSION_SECRET (see .env.example).",
+        file=sys.stderr,
     )
+    _session_secret = secrets.token_hex(32)
 
 app = FastAPI(title="Research Lab Assistant")
-app.add_middleware(SessionMiddleware, secret_key=_settings.session_secret, same_site="lax")
+app.add_middleware(SessionMiddleware, secret_key=_session_secret, same_site="lax")
 app.mount("/static", StaticFiles(directory=WEB_DIR / "static"), name="static")
 app.include_router(auth.router)
 
