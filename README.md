@@ -58,17 +58,40 @@ before.
 
 ```bash
 cp .env.example .env   # if you haven't already
-# add ANTHROPIC_API_KEY, and set SITE_USERNAME / SITE_PASSWORD
+# add ANTHROPIC_API_KEY, SITE_USERNAME / SITE_PASSWORD, and a SESSION_SECRET
+# (generate one with: python -c "import secrets; print(secrets.token_hex(32))")
 uvicorn web.app:app --reload --port 8000
 ```
 
-Open `http://localhost:8000` — you'll be prompted for the `SITE_USERNAME` /
-`SITE_PASSWORD` you set in `.env`. **Every route is behind HTTP Basic Auth**,
-since each run costs real Anthropic API calls and this is meant to be
-deployed publicly — don't skip setting those two env vars.
+Open `http://localhost:8000` — you'll land on a login page (not a browser
+popup). **Every route requires logging in**, since each run costs real
+Anthropic API calls and this is meant to be deployed publicly.
 
 Run history is stored in a local `runs.db` SQLite file (separate from the
 CLI's `outputs/*.md` files).
+
+### Adding "Sign in with Google" (optional)
+
+The login page always has the username/password form; you can additionally
+enable a "Sign in with Google" button, restricted to one email address so a
+stranger's Google account can't get in:
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com) ->
+   create or select a project -> **APIs & Services -> OAuth consent screen**.
+   Choose **External**, and under "Test users" add your own email — while
+   the app is unpublished ("Testing" status), only emails added here can
+   complete the login at all, which doubles as a second layer of protection.
+2. **APIs & Services -> Credentials -> Create Credentials -> OAuth client ID**,
+   type **Web application**. Add these **Authorized redirect URIs**:
+   - `http://localhost:8000/auth/google/callback` (local dev)
+   - `https://<your-service>.onrender.com/auth/google/callback` (once deployed)
+3. Copy the generated **Client ID** and **Client Secret** into
+   `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` in `.env` (or Render's env vars).
+4. Set `ALLOWED_EMAIL` to the one address allowed to sign in via Google —
+   this is checked in the app in addition to Google's own test-user list.
+
+Leave all three blank to skip Google login entirely — the app falls back to
+username/password only.
 
 ### Deploying it on Render
 
@@ -78,10 +101,13 @@ configure everything from the file instead of manual dashboard setup:
 1. Push this repo to GitHub (already done if you're reading this from there).
 2. On [Render](https://render.com), sign in and choose **New + -> Blueprint**,
    then connect this GitHub repo. Render detects `render.yaml` automatically.
-3. It'll prompt you for three secrets (kept out of the repo): `ANTHROPIC_API_KEY`,
-   `SITE_USERNAME`, `SITE_PASSWORD`. Fill those in and deploy.
+3. It'll prompt you for the secrets kept out of the repo: `ANTHROPIC_API_KEY`,
+   `SITE_USERNAME`, `SITE_PASSWORD`, and (optional) `GOOGLE_CLIENT_ID` /
+   `GOOGLE_CLIENT_SECRET` / `ALLOWED_EMAIL` — leave the Google ones blank to
+   skip that step for now and add them later from the service's Environment
+   tab. `SESSION_SECRET` is generated for you automatically.
 4. That's it — Render builds and starts the service, and gives you a public
-   `https://<your-service>.onrender.com` URL behind the Basic Auth login.
+   `https://<your-service>.onrender.com` URL behind the login page.
 
 This uses Render's **free tier** by default, which has no persistent disk —
 `runs.db` (your run history) resets on every redeploy and on free-tier idle

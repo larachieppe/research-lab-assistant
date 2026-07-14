@@ -9,7 +9,11 @@ services:
     plan: free
     branch: main
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn web.app:app --host 0.0.0.0 --port $PORT
+    # --proxy-headers/--forwarded-allow-ips: Render terminates TLS in front
+    # of the app, so without these uvicorn sees plain http and builds an
+    # http:// Google OAuth redirect_uri, which won't match the https://
+    # Authorized redirect URI configured in Google Cloud Console.
+    startCommand: uvicorn web.app:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'
     envVars:
       - key: ANTHROPIC_API_KEY
         sync: false
@@ -19,6 +23,16 @@ services:
         sync: false
       - key: ANTHROPIC_MODEL
         value: claude-sonnet-5
+      - key: SESSION_SECRET
+        generateValue: true
+      # Optional: leave these three blank in the Render dashboard to skip
+      # Google sign-in and use the username/password login only.
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: ALLOWED_EMAIL
+        sync: false
 
     # Free tier has no persistent disk, so runs.db (the web app's run
     # history) resets on every redeploy and on free-tier idle restarts.

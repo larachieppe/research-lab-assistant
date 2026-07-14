@@ -1,51 +1,45 @@
 """FastAPI web app wrapping the existing LangGraph pipeline (src/graph.py).
 
-The whole app sits behind HTTP Basic Auth - it's meant to be deployed
-publicly, and every run costs real Anthropic API calls, so nothing here is
-reachable without SITE_USERNAME/SITE_PASSWORD.
+Every route requires a logged-in session (see web/auth.py) - it's meant to
+be deployed publicly, and every run costs real Anthropic API calls, so
+nothing here is reachable without logging in at /login first.
 """
 
 from __future__ import annotations
 
-import secrets
 import uuid
 from pathlib import Path
 
 import markdown as md
 from fastapi import BackgroundTasks, Depends, FastAPI, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
 
 from src.config import load_settings
 from src.graph import build_graph
-from web import db
+from web import auth, db
+from web.auth import NotAuthenticated, require_auth
+from web.templating import templates
 
 WEB_DIR = Path(__file__).resolve().parent
 
+_settings = load_settings()
+if not _settings.session_secret:
+    raise RuntimeError(
+        "SESSION_SECRET is not set. Generate one with: "
+        "python -c \"import secrets; print(secrets.token_hex(32))\""
+    )
+
 app = FastAPI(title="Research Lab Assistant")
+app.add_middleware(SessionMiddleware, secret_key=_settings.session_secret, same_site="lax")
 app.mount("/static", StaticFiles(directory=WEB_DIR / "static"), name="static")
-templates = Jinja2Templates(directory=WEB_DIR / "templates")
-
-security = HTTPBasic()
+app.include_router(auth.router)
 
 
-def require_auth(credentials: HTTPBasicCredentials = Depends(security)) -> None:
-    settings = load_settings()
-    if not settings.site_username or not settings.site_password:
-        raise HTTPException(
-            status_code=500,
-            detail="SITE_USERNAME/SITE_PASSWORD are not configured on the server.",
-        )
-    valid_username = secrets.compare_digest(credentials.username, settings.site_username)
-    valid_password = secrets.compare_digest(credentials.password, settings.site_password)
-    if not (valid_username and valid_password):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid credentials",
-            headers={"WWW-Authenticate": "Basic"},
-        )
+@app.exception_handler(NotAuthenticated)
+def handle_not_authenticated(request: Request, exc: NotAuthenticated) -> RedirectResponse:
+    return RedirectResponse(url="/login", status_code=303)
 
 
 @app.on_event("startup")
