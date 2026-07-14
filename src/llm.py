@@ -12,17 +12,21 @@ from functools import lru_cache
 from typing import Any
 
 import anthropic
-from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random_exponential
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_random_exponential
 
 from src.config import load_settings
 
-# Config errors (e.g. a missing API key) can't be fixed by retrying - retry
-# only transient failures (rate limits, network blips) so the real message
-# reaches the caller instead of a RetryError wrapping it.
+# Only retry errors that can plausibly succeed on a second attempt (rate
+# limits, network blips, momentary 5xx). Config/auth problems (missing or
+# invalid API key, bad request, etc.) can't be fixed by retrying - retrying
+# those just delays the failure and replaces the real message with an
+# opaque RetryError wrapper, so let them propagate immediately instead.
 _retry = retry(
     wait=wait_random_exponential(min=1, max=20),
     stop=stop_after_attempt(4),
-    retry=retry_if_not_exception_type(RuntimeError),
+    retry=retry_if_exception_type(
+        (anthropic.RateLimitError, anthropic.APIConnectionError, anthropic.InternalServerError)
+    ),
 )
 
 
