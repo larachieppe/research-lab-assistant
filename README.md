@@ -13,8 +13,9 @@ START -> planner -> search -> filter -> extract -> synthesize -> END
 - **search** — queries PubMed (NCBI E-utilities) and arXiv (Atom API) in
   parallel, then dedupes results across sources.
 - **filter** — a single batched Claude call screens all retrieved papers by
-  title + abstract snippet, dropping the ones unlikely to be relevant before
-  the more expensive per-paper extraction step runs.
+  title + full abstract, keeping only papers with direct, substantive
+  evidence for the question (not just topical overlap) before the more
+  expensive per-paper extraction step runs.
 - **extract** — Claude pulls the findings relevant to your question out of
   each remaining paper's full abstract, run concurrently across papers.
 - **synthesize** — Claude writes a short synthesis citing evidence inline
