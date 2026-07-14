@@ -1,0 +1,32 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# In the Render dashboard: New + -> Blueprint -> connect this GitHub repo.
+# Render reads this file automatically and prompts you for the `sync: false`
+# secrets below (never stored in the repo).
+services:
+  - type: web
+    name: research-lab-assistant
+    runtime: python
+    plan: free
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn web.app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: SITE_USERNAME
+        sync: false
+      - key: SITE_PASSWORD
+        sync: false
+      - key: ANTHROPIC_MODEL
+        value: claude-sonnet-5
+
+    # Free tier has no persistent disk, so runs.db (the web app's run
+    # history) resets on every redeploy and on free-tier idle restarts.
+    # To keep history across restarts, upgrade `plan` to `starter` and
+    # uncomment the block below, then set RUNS_DB_PATH=/data/runs.db as
+    # an env var.
+    #
+    # disk:
+    #   name: runs-data
+    #   mountPath: /data
+    #   sizeGB: 1

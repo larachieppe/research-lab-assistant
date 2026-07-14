@@ -70,18 +70,25 @@ deployed publicly — don't skip setting those two env vars.
 Run history is stored in a local `runs.db` SQLite file (separate from the
 CLI's `outputs/*.md` files).
 
-### Deploying it (e.g. Render)
+### Deploying it on Render
+
+This repo includes a [`render.yaml`](render.yaml) Blueprint, so Render can
+configure everything from the file instead of manual dashboard setup:
 
 1. Push this repo to GitHub (already done if you're reading this from there).
-2. On [Render](https://render.com), create a new **Web Service** from the repo:
-   - Build command: `pip install -r requirements.txt`
-   - Start command: `uvicorn web.app:app --host 0.0.0.0 --port $PORT`
-3. Add a **persistent disk** (e.g. mounted at `/data`) and set
-   `RUNS_DB_PATH=/data/runs.db` as an environment variable — without a
-   persistent disk, `runs.db` lives on the ephemeral filesystem and your run
-   history resets on every redeploy.
-4. Set `ANTHROPIC_API_KEY`, `SITE_USERNAME`, and `SITE_PASSWORD` as
-   environment secrets in Render's dashboard (never commit `.env`).
+2. On [Render](https://render.com), sign in and choose **New + -> Blueprint**,
+   then connect this GitHub repo. Render detects `render.yaml` automatically.
+3. It'll prompt you for three secrets (kept out of the repo): `ANTHROPIC_API_KEY`,
+   `SITE_USERNAME`, `SITE_PASSWORD`. Fill those in and deploy.
+4. That's it — Render builds and starts the service, and gives you a public
+   `https://<your-service>.onrender.com` URL behind the Basic Auth login.
+
+This uses Render's **free tier** by default, which has no persistent disk —
+`runs.db` (your run history) resets on every redeploy and on free-tier idle
+restarts. That's fine for demoing live pipeline runs; if you want history to
+accumulate over time, upgrade `plan: free` to `plan: starter` in
+`render.yaml` (~$7/mo), uncomment the `disk:` block, and set
+`RUNS_DB_PATH=/data/runs.db`.
 
 Any other host that runs a standard ASGI app (Railway, Fly.io, etc.) works
 the same way — same build/start commands, same persistent-disk requirement.
