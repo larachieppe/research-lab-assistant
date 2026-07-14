@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}History - Research Lab Assistant{% endblock %}
+{% block content %}
+  <h1>Run history</h1>
+  {% if runs %}
+    <table class="run-table">
+      <thead>
+        <tr><th>Question</th><th>Status</th><th>Created</th></tr>
+      </thead>
+      <tbody>
+        {% for run in runs %}
+          <tr>
+            <td><a href="/runs/{{ run.id }}">{{ run.question }}</a></td>
+            <td><span class="status status-{{ run.status }}">{{ run.status }}</span></td>
+            <td class="subtle">{{ run.created_at }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="subtle">No runs yet. <a href="/">Ask a question</a> to get started.</p>
+  {% endif %}
+{% endblock %}

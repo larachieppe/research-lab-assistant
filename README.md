@@ -49,11 +49,49 @@ Options:
 Each run prints the synthesis to the terminal and saves a timestamped Markdown
 report to `outputs/`.
 
+## Web app
+
+A small FastAPI app (`web/`) wraps the same pipeline with a browser UI: submit
+a question, watch it run, and browse past runs. It's a separate consumer of
+`src/graph.py` — the CLI above is untouched and keeps working exactly as
+before.
+
+```bash
+cp .env.example .env   # if you haven't already
+# add ANTHROPIC_API_KEY, and set SITE_USERNAME / SITE_PASSWORD
+uvicorn web.app:app --reload --port 8000
+```
+
+Open `http://localhost:8000` — you'll be prompted for the `SITE_USERNAME` /
+`SITE_PASSWORD` you set in `.env`. **Every route is behind HTTP Basic Auth**,
+since each run costs real Anthropic API calls and this is meant to be
+deployed publicly — don't skip setting those two env vars.
+
+Run history is stored in a local `runs.db` SQLite file (separate from the
+CLI's `outputs/*.md` files).
+
+### Deploying it (e.g. Render)
+
+1. Push this repo to GitHub (already done if you're reading this from there).
+2. On [Render](https://render.com), create a new **Web Service** from the repo:
+   - Build command: `pip install -r requirements.txt`
+   - Start command: `uvicorn web.app:app --host 0.0.0.0 --port $PORT`
+3. Add a **persistent disk** (e.g. mounted at `/data`) and set
+   `RUNS_DB_PATH=/data/runs.db` as an environment variable — without a
+   persistent disk, `runs.db` lives on the ephemeral filesystem and your run
+   history resets on every redeploy.
+4. Set `ANTHROPIC_API_KEY`, `SITE_USERNAME`, and `SITE_PASSWORD` as
+   environment secrets in Render's dashboard (never commit `.env`).
+
+Any other host that runs a standard ASGI app (Railway, Fly.io, etc.) works
+the same way — same build/start commands, same persistent-disk requirement.
+
 ## Tests
 
 ```bash
 pytest tests/
 ```
 
-Tests cover deduplication logic and PubMed/arXiv XML parsing against saved
-fixtures — no network access or API key required.
+Tests cover deduplication logic, PubMed/arXiv XML parsing against saved
+fixtures, and the paper-relevance filter agent (with the LLM call mocked) —
+no network access or API key required.

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ run.question }} - Research Lab Assistant{% endblock %}
+{% block content %}
+  <h1>{{ run.question }}</h1>
+  <p>
+    <span id="status-badge" class="status status-{{ run.status }}">{{ run.status }}</span>
+    <span class="subtle">max papers: {{ run.max_papers }} &middot; max queries: {{ run.max_queries }}</span>
+  </p>
+
+  <div id="result">
+    {% if run.status == "completed" %}
+      <article class="summary">{{ run.summary_html | safe }}</article>
+    {% elif run.status == "failed" %}
+      <p class="error">Pipeline failed: {{ run.error }}</p>
+    {% else %}
+      <p class="subtle">Running the pipeline (plan &rarr; search &rarr; filter &rarr; extract &rarr; synthesize)... this page will update automatically.</p>
+    {% endif %}
+  </div>
+
+  {% if run.status in ("pending", "running") %}
+    <script>const RUN_ID = {{ run.id | tojson }};</script>
+    <script src="/static/poll.js"></script>
+  {% endif %}
+{% endblock %}

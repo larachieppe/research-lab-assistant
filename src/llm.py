@@ -12,9 +12,18 @@ from functools import lru_cache
 from typing import Any
 
 import anthropic
-from tenacity import retry, stop_after_attempt, wait_random_exponential
+from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_random_exponential
 
 from src.config import load_settings
+
+# Config errors (e.g. a missing API key) can't be fixed by retrying - retry
+# only transient failures (rate limits, network blips) so the real message
+# reaches the caller instead of a RetryError wrapping it.
+_retry = retry(
+    wait=wait_random_exponential(min=1, max=20),
+    stop=stop_after_attempt(4),
+    retry=retry_if_not_exception_type(RuntimeError),
+)
 
 
 @lru_cache(maxsize=1)
@@ -27,7 +36,7 @@ def _client() -> anthropic.Anthropic:
     return anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
 
-@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(4))
+@_retry
 def call_structured(
     *,
     system: str,
@@ -59,7 +68,7 @@ def call_structured(
     raise RuntimeError(f"Claude did not return the expected tool call '{tool_name}'")
 
 
-@retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(4))
+@_retry
 def call_text(*, system: str, user: str, max_tokens: int = 2048) -> str:
     """Plain-text completion, used for the final free-form synthesis writeup."""
     settings = load_settings()
