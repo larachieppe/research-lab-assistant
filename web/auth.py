@@ -48,6 +48,13 @@ def require_auth(request: Request) -> None:
         raise NotAuthenticated()
 
 
+def is_authenticated(request: Request) -> bool:
+    """Same check as require_auth, but for places that render differently
+    for logged-in vs anonymous visitors instead of hard-blocking (e.g. the
+    public showcase, or an owner-only button on an otherwise-public page)."""
+    return bool(request.session.get("authenticated"))
+
+
 def _valid_password_login(settings: Settings, username: str, password: str) -> bool:
     if not settings.site_username or not settings.site_password:
         return False
@@ -81,7 +88,7 @@ def login_submit(request: Request, username: str = Form(...), password: str = Fo
     settings = load_settings()
     if _valid_password_login(settings, username, password):
         request.session["authenticated"] = True
-        return RedirectResponse(url="/", status_code=303)
+        return RedirectResponse(url="/ask", status_code=303)
     return RedirectResponse(url="/login?error=invalid", status_code=303)
 
 
@@ -108,7 +115,7 @@ async def google_callback(request: Request):
 
     request.session["authenticated"] = True
     request.session["email"] = email
-    return RedirectResponse(url="/", status_code=303)
+    return RedirectResponse(url="/ask", status_code=303)
 
 
 @router.get("/logout")

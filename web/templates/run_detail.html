@@ -7,6 +7,13 @@
       <span id="status-badge" class="status status-{{ run.status }}">{{ run.status }}</span>
       <span class="subtle">max papers: {{ run.max_papers }} &middot; max queries: {{ run.max_queries }}</span>
     </p>
+    {% if is_authenticated(request) %}
+      <form action="/runs/{{ run.id }}/feature" method="post" class="feature-toggle">
+        <button type="submit" class="feature-button">
+          {% if run.featured %}★ Featured on homepage (click to remove){% else %}☆ Feature on homepage{% endif %}
+        </button>
+      </form>
+    {% endif %}
   </section>
 
   <div id="result">

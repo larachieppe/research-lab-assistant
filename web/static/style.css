@@ -228,7 +228,26 @@ button {
 button:hover { transform: translateY(-1px) scale(1.02); box-shadow: 0 8px 32px rgba(139, 92, 246, 0.45); }
 button:active { transform: translateY(0) scale(0.99); }
 
+.feature-toggle { margin-top: 1rem; }
+
+.feature-button {
+  padding: 0.4rem 0.9rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--subtle);
+  font-size: 0.8rem;
+  box-shadow: none;
+}
+
+.feature-button:hover {
+  border-color: var(--accent-1);
+  color: var(--fg);
+  box-shadow: none;
+}
+
 h2 { font-size: 1.05rem; margin: 0 0 1rem; }
+
+.login-cta { margin-top: 2rem; }
 
 .run-list {
   list-style: none;

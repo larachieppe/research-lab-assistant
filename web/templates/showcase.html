@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Research Lab Assistant{% endblock %}
+{% block content %}
+  <section class="hero">
+    <h1>Ask a question.<br><span class="gradient-text">Get real evidence.</span></h1>
+    <p class="subtle">
+      A multi-agent research assistant: it searches PubMed and arXiv, extracts
+      relevant findings, and synthesizes a plain-language, cited answer with
+      an interactive evidence map showing how the sources connect. Built with
+      LangGraph and Claude —
+      <a href="https://github.com/larachieppe/research-lab-assistant">source on GitHub</a>.
+    </p>
+  </section>
+
+  {% if featured_runs %}
+    <h2>Example runs</h2>
+    <ul class="run-list">
+      {% for run in featured_runs %}
+        <li>
+          <a href="/runs/{{ run.id }}">{{ run.question }}</a>
+          <span class="status status-{{ run.status }}">{{ run.status }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="card">
+      <p class="subtle">No example runs are featured yet — check back soon.</p>
+    </div>
+  {% endif %}
+
+  {% if not is_authenticated(request) %}
+    <p class="subtle login-cta">
+      Want to ask your own question? <a href="/login">Log in</a>.
+    </p>
+  {% endif %}
+{% endblock %}

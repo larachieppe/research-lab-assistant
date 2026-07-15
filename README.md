@@ -73,13 +73,34 @@ cp .env.example .env   # if you haven't already
 uvicorn web.app:app --reload --port 8000
 ```
 
-Open `http://localhost:8000` — you'll land on a login page (not a browser
-popup). **Every route requires logging in**, since each run costs real
-Anthropic API calls and this is meant to be deployed publicly.
+Open `http://localhost:8000` — you'll land on a public showcase page (see
+"Public showcase" below). Click **Log in** to reach `/ask` and actually run
+the pipeline; every route that costs an Anthropic API call stays behind a
+real login page (not a browser popup), since this is meant to be deployed
+publicly.
 
 Run history is stored in a local `runs.db` SQLite file by default (separate
 from the CLI's `outputs/*.md` files) — see "Persistent history" below for
 why you'd want to change that before deploying.
+
+### Public showcase (for sharing a demo link)
+
+`/` is public — no login needed — and shows a small curated list of
+**featured** example runs, so you can share the plain root URL (e.g. on a
+resume) without handing out credentials or exposing your Anthropic budget
+to strangers. Everything that actually costs an API call (`/ask`,
+submitting a question) still requires logging in.
+
+To curate it:
+
+1. Log in and ask a few genuinely good questions from `/ask`.
+2. Open one of the resulting `/runs/{id}` pages while logged in — there's a
+   small **"☆ Feature on homepage"** button near the top. Click it.
+3. That run now shows up in the public list at `/` and its page is viewable
+   by anyone, logged in or not. Click the button again to unfeature it.
+
+`/history` stays private (it's your full run log, including test/junk
+questions) — only explicitly featured runs are ever public.
 
 ### Adding "Sign in with Google" (optional)
 

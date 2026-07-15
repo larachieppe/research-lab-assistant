@@ -13,9 +13,13 @@
   <header class="topbar">
     <a class="brand" href="/">Research Lab Assistant</a>
     <nav>
-      <a href="/">New question</a>
-      <a href="/history">History</a>
-      <a href="/logout">Log out</a>
+      {% if is_authenticated(request) %}
+        <a href="/ask">Ask a question</a>
+        <a href="/history">History</a>
+        <a href="/logout">Log out</a>
+      {% else %}
+        <a href="/login">Log in</a>
+      {% endif %}
     </nav>
   </header>
   <main class="container">

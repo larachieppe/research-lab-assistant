@@ -25,9 +25,15 @@ def _settings(**overrides) -> Settings:
 
 def test_protected_route_without_session_redirects_to_login():
     client = TestClient(app)
-    response = client.get("/", follow_redirects=False)
+    response = client.get("/ask", follow_redirects=False)
     assert response.status_code == 303
     assert response.headers["location"] == "/login"
+
+
+def test_showcase_is_public_without_a_session():
+    client = TestClient(app)
+    response = client.get("/", follow_redirects=False)
+    assert response.status_code == 200
 
 
 def test_login_page_renders_without_google_button_when_unconfigured():
@@ -56,10 +62,10 @@ def test_correct_password_login_sets_session_and_grants_access():
             follow_redirects=False,
         )
         assert login_response.status_code == 303
-        assert login_response.headers["location"] == "/"
+        assert login_response.headers["location"] == "/ask"
 
-        index_response = client.get("/", follow_redirects=False)
-        assert index_response.status_code == 200
+        ask_response = client.get("/ask", follow_redirects=False)
+        assert ask_response.status_code == 200
 
 
 def test_wrong_password_login_redirects_with_error_and_grants_no_access():
@@ -73,9 +79,9 @@ def test_wrong_password_login_redirects_with_error_and_grants_no_access():
         assert login_response.status_code == 303
         assert login_response.headers["location"] == "/login?error=invalid"
 
-        index_response = client.get("/", follow_redirects=False)
-        assert index_response.status_code == 303
-        assert index_response.headers["location"] == "/login"
+        ask_response = client.get("/ask", follow_redirects=False)
+        assert ask_response.status_code == 303
+        assert ask_response.headers["location"] == "/login"
 
 
 def test_logout_clears_session():
@@ -86,7 +92,7 @@ def test_logout_clears_session():
             data={"username": "testuser", "password": "testpass123"},
             follow_redirects=False,
         )
-        assert client.get("/", follow_redirects=False).status_code == 200
+        assert client.get("/ask", follow_redirects=False).status_code == 200
 
         client.get("/logout", follow_redirects=False)
-        assert client.get("/", follow_redirects=False).status_code == 303
+        assert client.get("/ask", follow_redirects=False).status_code == 303

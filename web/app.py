@@ -50,6 +50,7 @@ app = FastAPI(title="Research Lab Assistant")
 app.add_middleware(SessionMiddleware, secret_key=_session_secret, same_site="lax")
 app.mount("/static", StaticFiles(directory=WEB_DIR / "static"), name="static")
 app.include_router(auth.router)
+templates.env.globals["is_authenticated"] = auth.is_authenticated
 
 
 @app.exception_handler(NotAuthenticated)
@@ -103,8 +104,15 @@ def _render_result_fragment(run: dict) -> str:
     return templates.env.get_template("_result.html").render(run=_render_run(run))
 
 
-@app.get("/", dependencies=[Depends(require_auth)])
-def index(request: Request):
+@app.get("/")
+def showcase(request: Request):
+    return templates.TemplateResponse(
+        "showcase.html", {"request": request, "featured_runs": db.list_featured_runs()}
+    )
+
+
+@app.get("/ask", dependencies=[Depends(require_auth)])
+def ask(request: Request):
     return templates.TemplateResponse(
         "index.html", {"request": request, "recent_runs": db.list_runs(limit=5)}
     )
@@ -127,22 +135,44 @@ def submit_run(
     return RedirectResponse(url=f"/runs/{run_id}", status_code=303)
 
 
-@app.get("/runs/{run_id}", dependencies=[Depends(require_auth)])
+def _visible_or_redirect(request: Request, run: dict) -> RedirectResponse | None:
+    """Featured runs are publicly viewable; everything else needs a session."""
+    if run["featured"] or auth.is_authenticated(request):
+        return None
+    return RedirectResponse(url="/login", status_code=303)
+
+
+@app.get("/runs/{run_id}")
 def run_detail(request: Request, run_id: str):
     run = db.get_run(run_id)
     if run is None:
         raise HTTPException(status_code=404, detail="Run not found")
+    redirect = _visible_or_redirect(request, run)
+    if redirect is not None:
+        return redirect
     return templates.TemplateResponse(
         "run_detail.html", {"request": request, "run": _render_run(run)}
     )
 
 
-@app.get("/api/runs/{run_id}", dependencies=[Depends(require_auth)])
-def run_status(run_id: str):
+@app.get("/api/runs/{run_id}")
+def run_status(request: Request, run_id: str):
     run = db.get_run(run_id)
     if run is None:
         raise HTTPException(status_code=404, detail="Run not found")
+    redirect = _visible_or_redirect(request, run)
+    if redirect is not None:
+        raise HTTPException(status_code=401, detail="Not authorized")
     return {"status": run["status"], "html": _render_result_fragment(run)}
+
+
+@app.post("/runs/{run_id}/feature", dependencies=[Depends(require_auth)])
+def toggle_featured(run_id: str):
+    run = db.get_run(run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    db.set_featured(run_id, not run["featured"])
+    return RedirectResponse(url=f"/runs/{run_id}", status_code=303)
 
 
 @app.get("/history", dependencies=[Depends(require_auth)])

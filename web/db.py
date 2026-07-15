@@ -43,7 +43,8 @@ if DATABASE_URL:
                     created_at TEXT NOT NULL,
                     completed_at TEXT,
                     evidence_graph_json TEXT,
-                    excluded_retracted_count INTEGER
+                    excluded_retracted_count INTEGER,
+                    featured BOOLEAN NOT NULL DEFAULT FALSE
                 )
                 """
             )
@@ -51,6 +52,7 @@ if DATABASE_URL:
             # upgrading a pre-existing Postgres table from an older schema.
             conn.execute("ALTER TABLE runs ADD COLUMN IF NOT EXISTS evidence_graph_json TEXT")
             conn.execute("ALTER TABLE runs ADD COLUMN IF NOT EXISTS excluded_retracted_count INTEGER")
+            conn.execute("ALTER TABLE runs ADD COLUMN IF NOT EXISTS featured BOOLEAN NOT NULL DEFAULT FALSE")
 
     def create_run(run_id: str, question: str, max_papers: int, max_queries: int) -> None:
         with _get_conn() as conn:
@@ -100,6 +102,20 @@ if DATABASE_URL:
                 "SELECT * FROM runs ORDER BY created_at DESC LIMIT %s", (limit,)
             ).fetchall()
 
+    def set_featured(run_id: str, featured: bool) -> None:
+        with _get_conn() as conn:
+            conn.execute("UPDATE runs SET featured = %s WHERE id = %s", (featured, run_id))
+
+    def list_featured_runs(limit: int = 8) -> list[dict]:
+        with _get_conn() as conn:
+            return conn.execute(
+                """
+                SELECT * FROM runs WHERE featured = TRUE AND status = 'completed'
+                ORDER BY created_at DESC LIMIT %s
+                """,
+                (limit,),
+            ).fetchall()
+
 else:
     import sqlite3
     from contextlib import contextmanager
@@ -140,6 +156,8 @@ else:
                 conn.execute("ALTER TABLE runs ADD COLUMN evidence_graph_json TEXT")
             if "excluded_retracted_count" not in existing_columns:
                 conn.execute("ALTER TABLE runs ADD COLUMN excluded_retracted_count INTEGER")
+            if "featured" not in existing_columns:
+                conn.execute("ALTER TABLE runs ADD COLUMN featured INTEGER NOT NULL DEFAULT 0")
 
     def create_run(run_id: str, question: str, max_papers: int, max_queries: int) -> None:
         with _get_conn() as conn:
@@ -188,5 +206,20 @@ else:
         with _get_conn() as conn:
             rows = conn.execute(
                 "SELECT * FROM runs ORDER BY created_at DESC LIMIT ?", (limit,)
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    def set_featured(run_id: str, featured: bool) -> None:
+        with _get_conn() as conn:
+            conn.execute("UPDATE runs SET featured = ? WHERE id = ?", (1 if featured else 0, run_id))
+
+    def list_featured_runs(limit: int = 8) -> list[dict]:
+        with _get_conn() as conn:
+            rows = conn.execute(
+                """
+                SELECT * FROM runs WHERE featured = 1 AND status = 'completed'
+                ORDER BY created_at DESC LIMIT ?
+                """,
+                (limit,),
             ).fetchall()
             return [dict(row) for row in rows]
