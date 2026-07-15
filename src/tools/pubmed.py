@@ -68,6 +68,16 @@ def parse_pubmed_xml(xml_bytes: bytes) -> list[Paper]:
         )
         year = int(year_text) if year_text and year_text.isdigit() else None
 
+        publication_types = [
+            pt.text.strip()
+            for pt in article.findall(".//PublicationTypeList/PublicationType")
+            if pt.text and pt.text.strip()
+        ]
+        retracted = "Retracted Publication" in publication_types or any(
+            cc.get("RefType") == "RetractionIn"
+            for cc in article.findall(".//CommentsCorrectionsList/CommentsCorrections")
+        )
+
         papers.append(
             Paper(
                 id=f"pubmed:{pmid}",
@@ -77,6 +87,8 @@ def parse_pubmed_xml(xml_bytes: bytes) -> list[Paper]:
                 year=year,
                 abstract=abstract,
                 url=f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/",
+                publication_types=publication_types,
+                retracted=retracted,
             )
         )
     return papers

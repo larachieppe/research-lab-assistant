@@ -13,12 +13,42 @@ class Paper:
     year: int | None
     abstract: str
     url: str
+    # PubMed's own PublicationType values (e.g. "Journal Article", "Review",
+    # "Randomized Controlled Trial", "Meta-Analysis", "Retracted Publication").
+    # Always empty for arXiv preprints - they don't carry this metadata.
+    publication_types: list[str] = field(default_factory=list)
+    retracted: bool = False
 
 
 @dataclass
 class Finding:
     paper_id: str
     claims: list[str] = field(default_factory=list)
+
+
+@dataclass
+class EvidenceNode:
+    citation_number: int
+    paper_id: str
+    title: str
+    year: int | None
+    source: str
+    url: str
+    x: float
+    y: float
+
+
+@dataclass
+class EvidenceEdge:
+    a: int  # citation numbers of the two co-cited papers
+    b: int
+    weight: int
+
+
+@dataclass
+class EvidenceGraph:
+    nodes: list[EvidenceNode]
+    edges: list[EvidenceEdge]
 
 
 class AgentState(TypedDict, total=False):
@@ -29,3 +59,5 @@ class AgentState(TypedDict, total=False):
     papers: list[Paper]
     findings: list[Finding]
     summary: str
+    evidence_graph: EvidenceGraph | None
+    excluded_retracted_count: int

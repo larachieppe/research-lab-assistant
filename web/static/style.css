@@ -136,6 +136,57 @@ button:hover { opacity: 0.9; }
 .summary { margin-top: 1rem; }
 .summary h2 { font-size: 1.1rem; }
 
+.cite-marker {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 600;
+  border-radius: 3px;
+  padding: 0 0.1rem;
+}
+
+.cite-marker.highlighted { background: var(--accent); color: #fff; }
+
+.evidence-map {
+  margin: 2rem 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.evidence-map h2 { font-size: 1rem; margin-top: 0; }
+
+.evidence-svg {
+  width: 100%;
+  max-width: 340px;
+  display: block;
+  margin: 0.5rem auto 0;
+}
+
+.evidence-edge {
+  stroke: var(--border);
+  stroke-width: 1.5;
+}
+
+.evidence-node circle {
+  fill: var(--bg);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  cursor: pointer;
+}
+
+.evidence-node text {
+  fill: var(--fg);
+  font-size: 11px;
+  pointer-events: none;
+}
+
+.evidence-node.highlighted circle { fill: var(--accent); }
+.evidence-node.highlighted text { fill: #fff; }
+
+.references ol { padding-left: 1.4rem; }
+.references li { padding: 0.15rem 0; border-radius: 4px; }
+.references li.highlighted { background: rgba(111, 207, 151, 0.18); }
+
 .login-body {
   min-height: 100vh;
   display: flex;

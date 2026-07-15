@@ -23,6 +23,7 @@ from src.state import AgentState, Finding, Paper
 from src.tools.arxiv import search_arxiv
 from src.tools.dedupe import dedupe_papers
 from src.tools.pubmed import search_pubmed
+from src.tools.retraction import exclude_retracted
 
 
 def planner_node(state: AgentState) -> dict:
@@ -52,7 +53,12 @@ def search_node(state: AgentState) -> dict:
                 # rather than aborting the whole pipeline over one bad call.
                 continue
 
-    return {"papers": dedupe_papers(all_papers)[:max_papers]}
+    deduped = dedupe_papers(all_papers)
+    kept, excluded_retracted_count = exclude_retracted(deduped)
+    return {
+        "papers": kept[:max_papers],
+        "excluded_retracted_count": excluded_retracted_count,
+    }
 
 
 def filter_node(state: AgentState) -> dict:
@@ -92,8 +98,8 @@ def extract_node(state: AgentState) -> dict:
 
 
 def synthesize_node(state: AgentState) -> dict:
-    summary = synthesize_summary(state["question"], state["papers"], state["findings"])
-    return {"summary": summary}
+    synthesis = synthesize_summary(state["question"], state["papers"], state["findings"])
+    return {"summary": synthesis.markdown, "evidence_graph": synthesis.graph}
 
 
 def build_graph():

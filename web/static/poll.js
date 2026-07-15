@@ -18,13 +18,10 @@
 
     badge.textContent = data.status;
     badge.className = `status status-${data.status}`;
+    result.innerHTML = data.html;
+    if (window.initEvidenceMap) window.initEvidenceMap();
 
-    if (data.status === "completed") {
-      result.innerHTML = `<article class="summary">${data.summary_html}</article>`;
-    } else if (data.status === "failed") {
-      result.innerHTML = `<p class="error">Pipeline failed: ${data.error}</p>`;
-      return;
-    } else {
+    if (data.status === "pending" || data.status === "running") {
       setTimeout(poll, 2000);
     }
   }

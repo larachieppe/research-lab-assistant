@@ -1,0 +1,36 @@
+{% if run.status == "completed" %}
+  {% if run.body_html %}<article class="summary">{{ run.body_html | safe }}</article>{% endif %}
+
+  {% if run.graph and run.graph.nodes|length > 1 %}
+    <section class="evidence-map">
+      <h2>Evidence map</h2>
+      <p class="subtle">Papers cited together to support the same point are connected. Click a paper, a marker in the text, or a reference below to see how they link up.</p>
+      <svg viewBox="0 0 300 300" class="evidence-svg" aria-hidden="true">
+        {% for edge in run.graph.edges %}
+          {% set node_a = (run.graph.nodes | selectattr("citation_number", "equalto", edge.a) | first) %}
+          {% set node_b = (run.graph.nodes | selectattr("citation_number", "equalto", edge.b) | first) %}
+          <line x1="{{ node_a.x }}" y1="{{ node_a.y }}" x2="{{ node_b.x }}" y2="{{ node_b.y }}"
+                class="evidence-edge" data-endpoints="{{ edge.a }},{{ edge.b }}"></line>
+        {% endfor %}
+        {% for node in run.graph.nodes %}
+          <g class="evidence-node" data-node="{{ node.citation_number }}">
+            <circle cx="{{ node.x }}" cy="{{ node.y }}" r="15"></circle>
+            <text x="{{ node.x }}" y="{{ node.y }}" text-anchor="middle" dy="0.35em">{{ node.citation_number }}</text>
+          </g>
+        {% endfor %}
+      </svg>
+    </section>
+  {% endif %}
+
+  {% if run.references_html %}
+    <div class="references">{{ run.references_html | safe }}</div>
+  {% endif %}
+
+  {% if run.excluded_retracted_count %}
+    <p class="subtle">{{ run.excluded_retracted_count }} retracted paper(s) were found and excluded from consideration.</p>
+  {% endif %}
+{% elif run.status == "failed" %}
+  <p class="error">Pipeline failed: {{ run.error }}</p>
+{% else %}
+  <p class="subtle">Running the pipeline (plan &rarr; search &rarr; filter &rarr; extract &rarr; synthesize)... this page will update automatically.</p>
+{% endif %}

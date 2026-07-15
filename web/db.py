@@ -46,6 +46,11 @@ def init_db() -> None:
             )
             """
         )
+        existing_columns = {row["name"] for row in conn.execute("PRAGMA table_info(runs)")}
+        if "evidence_graph_json" not in existing_columns:
+            conn.execute("ALTER TABLE runs ADD COLUMN evidence_graph_json TEXT")
+        if "excluded_retracted_count" not in existing_columns:
+            conn.execute("ALTER TABLE runs ADD COLUMN excluded_retracted_count INTEGER")
 
 
 def _now() -> str:
@@ -68,11 +73,21 @@ def mark_running(run_id: str) -> None:
         conn.execute("UPDATE runs SET status = 'running' WHERE id = ?", (run_id,))
 
 
-def mark_completed(run_id: str, summary: str) -> None:
+def mark_completed(
+    run_id: str,
+    summary: str,
+    evidence_graph_json: str | None = None,
+    excluded_retracted_count: int = 0,
+) -> None:
     with _get_conn() as conn:
         conn.execute(
-            "UPDATE runs SET status = 'completed', summary = ?, completed_at = ? WHERE id = ?",
-            (summary, _now(), run_id),
+            """
+            UPDATE runs
+            SET status = 'completed', summary = ?, evidence_graph_json = ?,
+                excluded_retracted_count = ?, completed_at = ?
+            WHERE id = ?
+            """,
+            (summary, evidence_graph_json, excluded_retracted_count, _now(), run_id),
         )
 
 

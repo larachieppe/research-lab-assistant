@@ -11,7 +11,8 @@ START -> planner -> search -> filter -> extract -> synthesize -> END
 
 - **planner** — Claude turns your question into 2-4 targeted search queries.
 - **search** — queries PubMed (NCBI E-utilities) and arXiv (Atom API) in
-  parallel, then dedupes results across sources.
+  parallel, dedupes results across sources, and drops any paper PubMed
+  flags as a retracted publication before it can be used as evidence.
 - **filter** — a single batched Claude call screens all retrieved papers by
   title + full abstract, keeping only papers with direct, substantive
   evidence for the question (not just topical overlap) before the more
@@ -20,7 +21,15 @@ START -> planner -> search -> filter -> extract -> synthesize -> END
   each remaining paper's full abstract, run concurrently across papers.
 - **synthesize** — Claude writes a short synthesis citing evidence inline
   (`[1]`, `[2]`, ...), with a deterministically-built reference list appended
-  so citation numbers always line up with the sources.
+  so citation numbers always line up with the sources. Each reference also
+  shows its publication type from PubMed (e.g. "Randomized Controlled
+  Trial", "Review") or "Preprint — not peer-reviewed" for arXiv, so you can
+  judge how much weight to give it.
+
+On the web app, each answer also gets an **evidence map**: papers cited
+together in the same paragraph are connected in a small interactive graph,
+and clicking a paper, a `[n]` marker in the text, or a reference highlights
+the other two — a quick way to see exactly what's backing any given claim.
 
 ## Setup
 
