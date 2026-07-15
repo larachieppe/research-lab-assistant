@@ -1,22 +1,21 @@
 {% extends "base.html" %}
 {% block title %}History - Research Lab Assistant{% endblock %}
 {% block content %}
-  <h1>Run history</h1>
+  <section class="hero">
+    <h1>Run <span class="gradient-text">history</span></h1>
+  </section>
   {% if runs %}
-    <table class="run-table">
-      <thead>
-        <tr><th>Question</th><th>Status</th><th>Created</th></tr>
-      </thead>
-      <tbody>
-        {% for run in runs %}
-          <tr>
-            <td><a href="/runs/{{ run.id }}">{{ run.question }}</a></td>
-            <td><span class="status status-{{ run.status }}">{{ run.status }}</span></td>
-            <td class="subtle">{{ run.created_at }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <ul class="run-list">
+      {% for run in runs %}
+        <li>
+          <div class="run-card-main">
+            <a href="/runs/{{ run.id }}">{{ run.question }}</a>
+            <span class="subtle">{{ run.created_at }}</span>
+          </div>
+          <span class="status status-{{ run.status }}">{{ run.status }}</span>
+        </li>
+      {% endfor %}
+    </ul>
   {% else %}
     <p class="subtle">No runs yet. <a href="/">Ask a question</a> to get started.</p>
   {% endif %}

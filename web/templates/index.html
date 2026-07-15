@@ -1,12 +1,14 @@
 {% extends "base.html" %}
 {% block title %}New question - Research Lab Assistant{% endblock %}
 {% block content %}
-  <h1>Ask a research question</h1>
-  <p class="subtle">
-    Searches PubMed and arXiv, extracts relevant findings, and synthesizes a
-    cited summary. Each run makes several Anthropic API calls and can take
-    30-60 seconds.
-  </p>
+  <section class="hero">
+    <h1>Ask a question.<br><span class="gradient-text">Get real evidence.</span></h1>
+    <p class="subtle">
+      Searches PubMed and arXiv, extracts relevant findings, and synthesizes a
+      cited summary. Each run makes several Anthropic API calls and can take
+      30-60 seconds.
+    </p>
+  </section>
 
   <form action="/runs" method="post" class="question-form">
     <label for="question">Research question</label>

@@ -1,11 +1,13 @@
 {% extends "base.html" %}
 {% block title %}{{ run.question }} - Research Lab Assistant{% endblock %}
 {% block content %}
-  <h1>{{ run.question }}</h1>
-  <p>
-    <span id="status-badge" class="status status-{{ run.status }}">{{ run.status }}</span>
-    <span class="subtle">max papers: {{ run.max_papers }} &middot; max queries: {{ run.max_queries }}</span>
-  </p>
+  <section class="hero">
+    <h1>{{ run.question }}</h1>
+    <p>
+      <span id="status-badge" class="status status-{{ run.status }}">{{ run.status }}</span>
+      <span class="subtle">max papers: {{ run.max_papers }} &middot; max queries: {{ run.max_queries }}</span>
+    </p>
+  </section>
 
   <div id="result">
     {% include "_result.html" %}
