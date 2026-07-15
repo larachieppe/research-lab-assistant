@@ -34,8 +34,6 @@ class EvidenceNode:
     year: int | None
     source: str
     url: str
-    x: float
-    y: float
 
 
 @dataclass

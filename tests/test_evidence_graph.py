@@ -41,11 +41,3 @@ def test_no_edges_when_no_paragraph_shares_two_citations():
     body = "Only paper one here [1].\n\nOnly paper two here [2]."
     graph = build_evidence_graph(body, papers, citation_number)
     assert graph.edges == []
-
-
-def test_node_positions_are_spread_around_a_circle():
-    papers = [_paper("a"), _paper("b"), _paper("c"), _paper("d")]
-    citation_number = {"a": 1, "b": 2, "c": 3, "d": 4}
-    graph = build_evidence_graph("no citations here", papers, citation_number)
-    positions = {(round(n.x, 2), round(n.y, 2)) for n in graph.nodes}
-    assert len(positions) == 4

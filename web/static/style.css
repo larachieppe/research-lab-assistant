@@ -142,9 +142,11 @@ button:hover { opacity: 0.9; }
   font-weight: 600;
   border-radius: 3px;
   padding: 0 0.1rem;
+  transition: opacity 0.15s ease;
 }
 
 .cite-marker.highlighted { background: var(--accent); color: #fff; }
+.cite-marker.dimmed { opacity: 0.3; }
 
 .evidence-map {
   margin: 2rem 0;
@@ -165,27 +167,44 @@ button:hover { opacity: 0.9; }
 .evidence-edge {
   stroke: var(--border);
   stroke-width: 1.5;
+  transition: opacity 0.15s ease;
 }
+
+.evidence-edge.highlighted { stroke: var(--accent); }
+.evidence-edge.dimmed { opacity: 0.15; }
+
+.evidence-node {
+  cursor: grab;
+  transition: opacity 0.15s ease;
+}
+
+.evidence-node:active { cursor: grabbing; }
 
 .evidence-node circle {
   fill: var(--bg);
   stroke: var(--accent);
   stroke-width: 1.5;
-  cursor: pointer;
 }
 
 .evidence-node text {
   fill: var(--fg);
   font-size: 11px;
   pointer-events: none;
+  user-select: none;
 }
 
 .evidence-node.highlighted circle { fill: var(--accent); }
 .evidence-node.highlighted text { fill: #fff; }
+.evidence-node.dimmed { opacity: 0.3; }
 
 .references ol { padding-left: 1.4rem; }
-.references li { padding: 0.15rem 0; border-radius: 4px; }
+.references li {
+  padding: 0.15rem 0;
+  border-radius: 4px;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
 .references li.highlighted { background: rgba(111, 207, 151, 0.18); }
+.references li.dimmed { opacity: 0.4; }
 
 .login-body {
   min-height: 100vh;

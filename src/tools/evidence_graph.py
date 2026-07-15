@@ -6,31 +6,20 @@ retrieved papers come from independent keyword searches, not a citation
 chain, so real citation links between them would usually be sparse or
 empty. Co-citation within the synthesis is always populated and reflects
 how the answer actually uses the evidence.
+
+This only describes graph structure (nodes/edges) - layout is computed
+client-side by a force simulation (web/static/evidence-map.js) so the
+graph can react to dragging, which a server-computed layout can't.
 """
 
 from __future__ import annotations
 
-import math
 import re
 from itertools import combinations
 
 from src.state import EvidenceEdge, EvidenceGraph, EvidenceNode, Paper
 
 _CITATION_RE = re.compile(r"\[(\d+)\]")
-
-# SVG viewBox is 0 0 300 300; nodes sit on a circle centered in it.
-_CENTER = 150.0
-_RADIUS = 110.0
-
-
-def _layout(n: int) -> list[tuple[float, float]]:
-    if n <= 1:
-        return [(_CENTER, _CENTER)] if n == 1 else []
-    positions = []
-    for i in range(n):
-        angle = 2 * math.pi * i / n
-        positions.append((_CENTER + _RADIUS * math.cos(angle), _CENTER + _RADIUS * math.sin(angle)))
-    return positions
 
 
 def build_evidence_graph(
@@ -44,7 +33,6 @@ def build_evidence_graph(
         for a, b in combinations(numbers, 2):
             edge_weights[(a, b)] = edge_weights.get((a, b), 0) + 1
 
-    positions = _layout(len(cited_papers))
     nodes = [
         EvidenceNode(
             citation_number=citation_number[paper.id],
@@ -53,10 +41,8 @@ def build_evidence_graph(
             year=paper.year,
             source=paper.source,
             url=paper.url,
-            x=x,
-            y=y,
         )
-        for paper, (x, y) in zip(cited_papers, positions)
+        for paper in cited_papers
     ]
     edges = [EvidenceEdge(a=a, b=b, weight=weight) for (a, b), weight in edge_weights.items()]
 
