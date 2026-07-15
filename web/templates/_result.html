@@ -20,5 +20,8 @@
 {% elif run.status == "failed" %}
   <p class="error">Pipeline failed: {{ run.error }}</p>
 {% else %}
-  <p class="subtle">Running the pipeline (plan &rarr; search &rarr; filter &rarr; extract &rarr; synthesize)... this page will update automatically.</p>
+  <div class="loading">
+    <span class="spinner" aria-hidden="true"></span>
+    <p class="subtle">Running the pipeline (plan &rarr; search &rarr; filter &rarr; extract &rarr; synthesize)... this page will update automatically. This can take a minute or more, especially on a cold start.</p>
+  </div>
 {% endif %}
