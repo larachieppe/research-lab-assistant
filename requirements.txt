@@ -12,4 +12,4 @@ python-multipart==0.0.20
 markdown==3.9
 authlib==1.6.5
 itsdangerous==2.2.0
-psycopg[binary]==3.2.3
+psycopg[binary]==3.2.10
