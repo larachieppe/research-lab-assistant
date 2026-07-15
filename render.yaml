@@ -33,12 +33,19 @@ services:
         sync: false
       - key: ALLOWED_EMAIL
         sync: false
+      # Optional: without this, run history (web/db.py) uses a local
+      # SQLite file that resets on every redeploy/idle-restart, since the
+      # free tier has no persistent disk. Set this to a free Postgres
+      # connection string (e.g. from neon.tech) to make history persist -
+      # see README.md for setup steps. Leave blank to accept the reset
+      # behavior.
+      - key: DATABASE_URL
+        sync: false
 
-    # Free tier has no persistent disk, so runs.db (the web app's run
-    # history) resets on every redeploy and on free-tier idle restarts.
-    # To keep history across restarts, upgrade `plan` to `starter` and
-    # uncomment the block below, then set RUNS_DB_PATH=/data/runs.db as
-    # an env var.
+    # Alternative to DATABASE_URL: pay for Render's own persistent disk
+    # instead of using a free external Postgres. Upgrade `plan` to
+    # `starter`, uncomment the block below, and set
+    # RUNS_DB_PATH=/data/runs.db as an env var.
     #
     # disk:
     #   name: runs-data

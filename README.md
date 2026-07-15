@@ -77,8 +77,9 @@ Open `http://localhost:8000` — you'll land on a login page (not a browser
 popup). **Every route requires logging in**, since each run costs real
 Anthropic API calls and this is meant to be deployed publicly.
 
-Run history is stored in a local `runs.db` SQLite file (separate from the
-CLI's `outputs/*.md` files).
+Run history is stored in a local `runs.db` SQLite file by default (separate
+from the CLI's `outputs/*.md` files) — see "Persistent history" below for
+why you'd want to change that before deploying.
 
 ### Adding "Sign in with Google" (optional)
 
@@ -103,6 +104,28 @@ stranger's Google account can't get in:
 Leave all three blank to skip Google login entirely — the app falls back to
 username/password only.
 
+### Persistent history (optional but recommended once deployed)
+
+By default, run history (`web/db.py`) lives in a local SQLite file. That's
+fine locally, but Render's free tier has no persistent disk — that file
+resets on every redeploy and on free-tier idle-restarts, so history won't
+actually accumulate once deployed.
+
+To fix that for free, point the app at a small hosted Postgres database
+instead:
+
+1. Create a free account at [neon.tech](https://neon.tech) and a new
+   project (their free tier doesn't expire, unlike Render's own free
+   Postgres which auto-deletes after 30 days).
+2. Copy the connection string it gives you (looks like
+   `postgresql://user:password@host/dbname?sslmode=require`).
+3. Set it as `DATABASE_URL` — in `.env` locally, and as an env var on
+   Render. The app detects it automatically and switches from SQLite to
+   Postgres; the table is created on first startup.
+
+Leave `DATABASE_URL` unset to keep using local SQLite — everything still
+works, history just won't survive a redeploy.
+
 ### Deploying it on Render
 
 This repo includes a [`render.yaml`](render.yaml) Blueprint, so Render can
@@ -113,21 +136,20 @@ configure everything from the file instead of manual dashboard setup:
    then connect this GitHub repo. Render detects `render.yaml` automatically.
 3. It'll prompt you for the secrets kept out of the repo: `ANTHROPIC_API_KEY`,
    `SITE_USERNAME`, `SITE_PASSWORD`, and (optional) `GOOGLE_CLIENT_ID` /
-   `GOOGLE_CLIENT_SECRET` / `ALLOWED_EMAIL` — leave the Google ones blank to
-   skip that step for now and add them later from the service's Environment
-   tab. `SESSION_SECRET` is generated for you automatically.
+   `GOOGLE_CLIENT_SECRET` / `ALLOWED_EMAIL` / `DATABASE_URL` — leave the
+   optional ones blank to skip for now and add them later from the
+   service's Environment tab. `SESSION_SECRET` is generated for you
+   automatically.
 4. That's it — Render builds and starts the service, and gives you a public
    `https://<your-service>.onrender.com` URL behind the login page.
 
 This uses Render's **free tier** by default, which has no persistent disk —
-`runs.db` (your run history) resets on every redeploy and on free-tier idle
-restarts. That's fine for demoing live pipeline runs; if you want history to
-accumulate over time, upgrade `plan: free` to `plan: starter` in
-`render.yaml` (~$7/mo), uncomment the `disk:` block, and set
-`RUNS_DB_PATH=/data/runs.db`.
+see "Persistent history" above (`DATABASE_URL`, free) for the recommended
+fix, or `render.yaml`'s commented-out `disk:` block for the paid
+alternative (upgrade `plan` to `starter`, ~$7/mo).
 
 Any other host that runs a standard ASGI app (Railway, Fly.io, etc.) works
-the same way — same build/start commands, same persistent-disk requirement.
+the same way — same build/start commands, same `DATABASE_URL` story.
 
 ## Tests
 
