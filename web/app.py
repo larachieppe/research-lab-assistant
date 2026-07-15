@@ -114,8 +114,8 @@ def index(request: Request):
 def submit_run(
     background_tasks: BackgroundTasks,
     question: str = Form(...),
-    max_papers: int = Form(8),
-    max_queries: int = Form(4),
+    max_papers: int = Form(12),
+    max_queries: int = Form(5),
 ):
     question = question.strip()
     if not question:

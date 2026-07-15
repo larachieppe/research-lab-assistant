@@ -17,15 +17,17 @@ research assistant extracts detailed findings from each one. You'll be
 given a research question and a list of candidate papers with their full
 abstracts.
 
-Select a paper only if its abstract gives direct, substantive evidence
-that helps answer the question - e.g. it reports a finding, comparison,
-mechanism, or result the question is actually asking about. Do not select
-a paper just because it shares a keyword or general subject area with the
-question; a paper that only mentions the topic in passing, studies a
-related but distinct question, or is a general review with no specific
-finding on this question should be excluded. When several papers report
-very similar evidence, prefer the ones with the most direct or specific
-findings over near-duplicates."""
+Select a paper if its abstract gives direct, substantive evidence toward
+answering the question - e.g. it reports a finding, comparison, mechanism,
+or result that bears on it. If the question compares two things or has
+multiple parts, a paper that directly addresses just ONE side or part is
+still relevant evidence - do not require a single paper to cover the whole
+compound question by itself; most won't. Do not select a paper just
+because it shares a keyword or general subject area with the question with
+no actual finding relevant to it, or is a general review with no specific
+finding on this question. When several papers report very similar
+evidence, prefer the ones with the most direct or specific findings over
+near-duplicates."""
 
 _INPUT_SCHEMA = {
     "type": "object",

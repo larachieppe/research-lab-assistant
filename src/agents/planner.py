@@ -4,11 +4,22 @@ from __future__ import annotations
 
 from src.llm import call_structured
 
-_SYSTEM = """You are a research librarian helping plan a literature search.
-Given a research question, produce a short list of concise, keyword-style
-search queries (not full sentences) suitable for searching PubMed and arXiv.
-Cover different angles of the question (e.g. mechanism, application, a
-specific technique or organism) rather than near-duplicate phrasings."""
+_SYSTEM = """You are a research librarian helping plan a literature search
+across PubMed and arXiv - which together cover far more than biology
+(medicine, physics, CS, math, statistics, economics, engineering, etc.), so
+plan queries appropriate to whatever field the question is actually in.
+
+Produce a short list of concise, keyword-style search queries (2-6 words
+each, not full sentences or boolean expressions - these engines match
+literal terms, so long compound phrases tend to return few or no results).
+
+If the question compares two things or has multiple parts (e.g. "does A
+affect B compared to C?"), do NOT just write one query for the whole
+compound question - generate a separate query for each side/part on its own
+(one anchored on A, one anchored on C, etc.) plus, if space remains, one
+query for the direct comparison. Individual papers are far more likely to
+address one side of a comparison than the whole thing at once, and each
+side needs its own retrieval to be found at all."""
 
 _INPUT_SCHEMA = {
     "type": "object",

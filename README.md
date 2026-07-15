@@ -52,8 +52,8 @@ python -m src.main "How does CRISPR-Cas9 off-target activity vary with guide RNA
 
 Options:
 
-- `--max-papers N` — total papers to retrieve across all sources (default 8)
-- `--max-queries N` — number of search queries the planner generates (default 4)
+- `--max-papers N` — total papers to retrieve across all sources (default 12)
+- `--max-queries N` — number of search queries the planner generates (default 5)
 - `--no-save` — skip writing the report to `outputs/`
 
 Each run prints the synthesis to the terminal and saves a timestamped Markdown

@@ -37,7 +37,7 @@ def search_node(state: AgentState) -> dict:
     settings = load_settings()
     queries = state["search_queries"]
     max_papers = state.get("max_papers", settings.max_papers)
-    per_query_limit = max(2, max_papers // max(len(queries), 1))
+    per_query_limit = max(3, max_papers // max(len(queries), 1))
 
     all_papers: list[Paper] = []
     with ThreadPoolExecutor(max_workers=8) as executor:

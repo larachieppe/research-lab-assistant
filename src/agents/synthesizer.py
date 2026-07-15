@@ -24,7 +24,11 @@ to sound scholarly.
 
 Cite evidence inline with bracketed numbers like [1], [2] that EXACTLY match
 the numbers given in the evidence list - do not renumber, invent, or omit
-citations. Do not include a references section yourself; just the body text."""
+citations. When two or more papers support the same point, cite them
+together in that sentence (e.g. "...off-target rates rise with mismatch
+count [1][2]." rather than splitting them across separate sentences) - it
+makes it clear which evidence agrees. Do not include a references section
+yourself; just the body text."""
 
 
 @dataclass

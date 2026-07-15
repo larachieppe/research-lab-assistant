@@ -18,8 +18,8 @@ class Settings:
     google_client_id: str | None
     google_client_secret: str | None
     allowed_email: str | None
-    max_papers: int = 8
-    max_search_queries: int = 4
+    max_papers: int = 12
+    max_search_queries: int = 5
 
 
 def load_settings() -> Settings:
