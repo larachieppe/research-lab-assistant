@@ -197,11 +197,23 @@ function buildEvidenceGraph(root) {
     };
   }
 
+  // A real mouse/trackpad click routinely fires at least one mousemove
+  // between mousedown and mouseup even with no perceptible movement (hand
+  // tremor, coalesced events, etc.) - only counting it as an actual drag
+  // once the pointer has moved past this threshold keeps a plain click from
+  // being silently swallowed as a "drag" and having its selection toggle
+  // suppressed below.
+  const DRAG_THRESHOLD = 3;
+
   nodeEls.forEach(function (item) {
     function onDown(evt) {
       dragging = item.p;
       dragging.fixed = true;
       dragging.moved = false;
+      const xy = clientXY(evt);
+      const pt = toSvgPoint(xy.x, xy.y);
+      dragging.dragStartX = pt ? pt.x : item.p.x;
+      dragging.dragStartY = pt ? pt.y : item.p.y;
       wake();
       evt.preventDefault();
     }
@@ -218,7 +230,11 @@ function buildEvidenceGraph(root) {
     dragging.y = pt.y;
     dragging.vx = 0;
     dragging.vy = 0;
-    dragging.moved = true;
+    const dx = pt.x - dragging.dragStartX;
+    const dy = pt.y - dragging.dragStartY;
+    if (Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) {
+      dragging.moved = true;
+    }
     wake();
   }
 
