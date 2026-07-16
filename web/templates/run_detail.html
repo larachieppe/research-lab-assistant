@@ -2,6 +2,9 @@
 {% block title %}{{ run.question }} - Research Lab Assistant{% endblock %}
 {% block content %}
   <section class="hero">
+    {% if parent %}
+      <p class="breadcrumb"><a href="/runs/{{ parent.id }}">&#8617; Follow-up to: {{ parent.question }}</a></p>
+    {% endif %}
     <h1>{{ run.question }}</h1>
     <p>
       <span id="status-badge" class="status status-{{ run.status }}">{{ run.status }}</span>
@@ -19,6 +22,28 @@
   <div id="result">
     {% include "_result.html" %}
   </div>
+
+  {% if children %}
+    <section class="followups">
+      <h2>Follow-ups</h2>
+      <ul>
+        {% for child in children %}
+          <li><a href="/runs/{{ child.id }}">{{ child.question }}</a></li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  {% if run.status == "completed" and run.papers_json and is_authenticated(request) %}
+    <section class="followup-section">
+      <h2>Ask a follow-up</h2>
+      <p class="subtle">Digs deeper using the same papers already retrieved for this question - faster than a fresh search.</p>
+      <form action="/runs/{{ run.id }}/followup" method="post" class="question-form">
+        <input type="text" name="question" placeholder="e.g. What about long-term safety?" required>
+        <button type="submit">Ask</button>
+      </form>
+    </section>
+  {% endif %}
 
   <script src="/static/evidence-map.js"></script>
   {% if run.status in ("pending", "running") %}

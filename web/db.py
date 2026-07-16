@@ -44,7 +44,9 @@ if DATABASE_URL:
                     completed_at TEXT,
                     evidence_graph_json TEXT,
                     excluded_retracted_count INTEGER,
-                    featured BOOLEAN NOT NULL DEFAULT FALSE
+                    featured BOOLEAN NOT NULL DEFAULT FALSE,
+                    parent_run_id TEXT,
+                    papers_json TEXT
                 )
                 """
             )
@@ -53,15 +55,23 @@ if DATABASE_URL:
             conn.execute("ALTER TABLE runs ADD COLUMN IF NOT EXISTS evidence_graph_json TEXT")
             conn.execute("ALTER TABLE runs ADD COLUMN IF NOT EXISTS excluded_retracted_count INTEGER")
             conn.execute("ALTER TABLE runs ADD COLUMN IF NOT EXISTS featured BOOLEAN NOT NULL DEFAULT FALSE")
+            conn.execute("ALTER TABLE runs ADD COLUMN IF NOT EXISTS parent_run_id TEXT")
+            conn.execute("ALTER TABLE runs ADD COLUMN IF NOT EXISTS papers_json TEXT")
 
-    def create_run(run_id: str, question: str, max_papers: int, max_queries: int) -> None:
+    def create_run(
+        run_id: str,
+        question: str,
+        max_papers: int,
+        max_queries: int,
+        parent_run_id: str | None = None,
+    ) -> None:
         with _get_conn() as conn:
             conn.execute(
                 """
-                INSERT INTO runs (id, question, max_papers, max_queries, status, created_at)
-                VALUES (%s, %s, %s, %s, 'pending', %s)
+                INSERT INTO runs (id, question, max_papers, max_queries, status, created_at, parent_run_id)
+                VALUES (%s, %s, %s, %s, 'pending', %s, %s)
                 """,
-                (run_id, question, max_papers, max_queries, _now()),
+                (run_id, question, max_papers, max_queries, _now(), parent_run_id),
             )
 
     def mark_running(run_id: str) -> None:
@@ -73,16 +83,17 @@ if DATABASE_URL:
         summary: str,
         evidence_graph_json: str | None = None,
         excluded_retracted_count: int = 0,
+        papers_json: str | None = None,
     ) -> None:
         with _get_conn() as conn:
             conn.execute(
                 """
                 UPDATE runs
                 SET status = 'completed', summary = %s, evidence_graph_json = %s,
-                    excluded_retracted_count = %s, completed_at = %s
+                    excluded_retracted_count = %s, papers_json = %s, completed_at = %s
                 WHERE id = %s
                 """,
-                (summary, evidence_graph_json, excluded_retracted_count, _now(), run_id),
+                (summary, evidence_graph_json, excluded_retracted_count, papers_json, _now(), run_id),
             )
 
     def mark_failed(run_id: str, error: str) -> None:
@@ -114,6 +125,13 @@ if DATABASE_URL:
                 ORDER BY created_at DESC LIMIT %s
                 """,
                 (limit,),
+            ).fetchall()
+
+    def list_children(parent_run_id: str) -> list[dict]:
+        with _get_conn() as conn:
+            return conn.execute(
+                "SELECT * FROM runs WHERE parent_run_id = %s ORDER BY created_at ASC",
+                (parent_run_id,),
             ).fetchall()
 
 else:
@@ -158,15 +176,25 @@ else:
                 conn.execute("ALTER TABLE runs ADD COLUMN excluded_retracted_count INTEGER")
             if "featured" not in existing_columns:
                 conn.execute("ALTER TABLE runs ADD COLUMN featured INTEGER NOT NULL DEFAULT 0")
+            if "parent_run_id" not in existing_columns:
+                conn.execute("ALTER TABLE runs ADD COLUMN parent_run_id TEXT")
+            if "papers_json" not in existing_columns:
+                conn.execute("ALTER TABLE runs ADD COLUMN papers_json TEXT")
 
-    def create_run(run_id: str, question: str, max_papers: int, max_queries: int) -> None:
+    def create_run(
+        run_id: str,
+        question: str,
+        max_papers: int,
+        max_queries: int,
+        parent_run_id: str | None = None,
+    ) -> None:
         with _get_conn() as conn:
             conn.execute(
                 """
-                INSERT INTO runs (id, question, max_papers, max_queries, status, created_at)
-                VALUES (?, ?, ?, ?, 'pending', ?)
+                INSERT INTO runs (id, question, max_papers, max_queries, status, created_at, parent_run_id)
+                VALUES (?, ?, ?, ?, 'pending', ?, ?)
                 """,
-                (run_id, question, max_papers, max_queries, _now()),
+                (run_id, question, max_papers, max_queries, _now(), parent_run_id),
             )
 
     def mark_running(run_id: str) -> None:
@@ -178,16 +206,17 @@ else:
         summary: str,
         evidence_graph_json: str | None = None,
         excluded_retracted_count: int = 0,
+        papers_json: str | None = None,
     ) -> None:
         with _get_conn() as conn:
             conn.execute(
                 """
                 UPDATE runs
                 SET status = 'completed', summary = ?, evidence_graph_json = ?,
-                    excluded_retracted_count = ?, completed_at = ?
+                    excluded_retracted_count = ?, papers_json = ?, completed_at = ?
                 WHERE id = ?
                 """,
-                (summary, evidence_graph_json, excluded_retracted_count, _now(), run_id),
+                (summary, evidence_graph_json, excluded_retracted_count, papers_json, _now(), run_id),
             )
 
     def mark_failed(run_id: str, error: str) -> None:
@@ -221,5 +250,13 @@ else:
                 ORDER BY created_at DESC LIMIT ?
                 """,
                 (limit,),
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    def list_children(parent_run_id: str) -> list[dict]:
+        with _get_conn() as conn:
+            rows = conn.execute(
+                "SELECT * FROM runs WHERE parent_run_id = ? ORDER BY created_at ASC",
+                (parent_run_id,),
             ).fetchall()
             return [dict(row) for row in rows]

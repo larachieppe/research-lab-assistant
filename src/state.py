@@ -55,7 +55,10 @@ class AgentState(TypedDict, total=False):
     max_queries: int
     search_queries: list[str]
     papers: list[Paper]
+    candidate_papers: list[Paper]
     findings: list[Finding]
     summary: str
     evidence_graph: EvidenceGraph | None
     excluded_retracted_count: int
+    previous_question: str
+    previous_summary: str

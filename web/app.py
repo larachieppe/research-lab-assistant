@@ -22,7 +22,8 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from src.config import load_settings
-from src.graph import build_graph
+from src.graph import build_followup_graph, build_graph
+from src.state import Paper
 from web import auth, db
 from web.auth import NotAuthenticated, require_auth
 from web.templating import templates
@@ -72,11 +73,49 @@ def _run_pipeline(run_id: str, question: str, max_papers: int, max_queries: int)
         )
         evidence_graph = result.get("evidence_graph")
         graph_json = json.dumps(asdict(evidence_graph)) if evidence_graph else None
+        candidate_papers = result.get("candidate_papers", [])
+        papers_json = json.dumps([asdict(p) for p in candidate_papers]) if candidate_papers else None
         db.mark_completed(
             run_id,
             result.get("summary", ""),
             graph_json,
             result.get("excluded_retracted_count", 0),
+            papers_json,
+        )
+    except Exception as exc:
+        db.mark_failed(run_id, str(exc))
+
+
+def _run_followup_pipeline(
+    run_id: str,
+    question: str,
+    candidate_papers_json: str,
+    previous_question: str,
+    previous_summary: str,
+) -> None:
+    db.mark_running(run_id)
+    try:
+        candidate_papers = [Paper(**p) for p in json.loads(candidate_papers_json)]
+        graph = build_followup_graph()
+        result = graph.invoke(
+            {
+                "question": question,
+                "papers": candidate_papers,
+                "previous_question": previous_question,
+                "previous_summary": previous_summary,
+            }
+        )
+        evidence_graph = result.get("evidence_graph")
+        graph_json = json.dumps(asdict(evidence_graph)) if evidence_graph else None
+        # Always carry the full inherited pool forward, not whatever this
+        # follow-up's own filter step narrowed "papers" down to - so a later
+        # follow-up-to-this-follow-up still has the original full pool to draw from.
+        db.mark_completed(
+            run_id,
+            result.get("summary", ""),
+            graph_json,
+            0,
+            candidate_papers_json,
         )
     except Exception as exc:
         db.mark_failed(run_id, str(exc))
@@ -150,8 +189,15 @@ def run_detail(request: Request, run_id: str):
     redirect = _visible_or_redirect(request, run)
     if redirect is not None:
         return redirect
+    parent = db.get_run(run["parent_run_id"]) if run["parent_run_id"] else None
     return templates.TemplateResponse(
-        "run_detail.html", {"request": request, "run": _render_run(run)}
+        "run_detail.html",
+        {
+            "request": request,
+            "run": _render_run(run),
+            "parent": parent,
+            "children": db.list_children(run_id),
+        },
     )
 
 
@@ -164,6 +210,38 @@ def run_status(request: Request, run_id: str):
     if redirect is not None:
         raise HTTPException(status_code=401, detail="Not authorized")
     return {"status": run["status"], "html": _render_result_fragment(run)}
+
+
+@app.post("/runs/{run_id}/followup", dependencies=[Depends(require_auth)])
+def submit_followup(
+    background_tasks: BackgroundTasks,
+    run_id: str,
+    question: str = Form(...),
+):
+    parent = db.get_run(run_id)
+    if parent is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    if not parent["papers_json"]:
+        raise HTTPException(
+            status_code=400,
+            detail="This run has no saved evidence pool to follow up on (it predates the follow-up feature).",
+        )
+
+    question = question.strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="Question cannot be empty.")
+
+    new_run_id = str(uuid.uuid4())
+    db.create_run(new_run_id, question, parent["max_papers"], parent["max_queries"], parent_run_id=run_id)
+    background_tasks.add_task(
+        _run_followup_pipeline,
+        new_run_id,
+        question,
+        parent["papers_json"],
+        parent["question"],
+        parent["summary"] or "",
+    )
+    return RedirectResponse(url=f"/runs/{new_run_id}", status_code=303)
 
 
 @app.post("/runs/{run_id}/feature", dependencies=[Depends(require_auth)])

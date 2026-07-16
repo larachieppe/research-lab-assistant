@@ -55,8 +55,13 @@ def search_node(state: AgentState) -> dict:
 
     deduped = dedupe_papers(all_papers)
     kept, excluded_retracted_count = exclude_retracted(deduped)
+    trimmed = kept[:max_papers]
     return {
-        "papers": kept[:max_papers],
+        "papers": trimmed,
+        # Preserved separately from "papers" so a later follow-up question can
+        # re-filter against the full retrieved pool, not just whatever this
+        # question's filter step narrowed "papers" down to.
+        "candidate_papers": trimmed,
         "excluded_retracted_count": excluded_retracted_count,
     }
 
@@ -102,6 +107,17 @@ def synthesize_node(state: AgentState) -> dict:
     return {"summary": synthesis.markdown, "evidence_graph": synthesis.graph}
 
 
+def synthesize_followup_node(state: AgentState) -> dict:
+    synthesis = synthesize_summary(
+        state["question"],
+        state["papers"],
+        state["findings"],
+        previous_question=state.get("previous_question"),
+        previous_summary=state.get("previous_summary"),
+    )
+    return {"summary": synthesis.markdown, "evidence_graph": synthesis.graph}
+
+
 def build_graph():
     graph = StateGraph(AgentState)
     graph.add_node("planner", planner_node)
@@ -113,6 +129,26 @@ def build_graph():
     graph.add_edge(START, "planner")
     graph.add_edge("planner", "search")
     graph.add_edge("search", "filter")
+    graph.add_edge("filter", "extract")
+    graph.add_edge("extract", "synthesize")
+    graph.add_edge("synthesize", END)
+
+    return graph.compile()
+
+
+def build_followup_graph():
+    """A cheaper pipeline for follow-up questions: reuses the parent run's
+    already-retrieved paper pool (passed in as "papers") instead of planning
+    and searching again.
+
+        START -> filter -> extract -> synthesize -> END
+    """
+    graph = StateGraph(AgentState)
+    graph.add_node("filter", filter_node)
+    graph.add_node("extract", extract_node)
+    graph.add_node("synthesize", synthesize_followup_node)
+
+    graph.add_edge(START, "filter")
     graph.add_edge("filter", "extract")
     graph.add_edge("extract", "synthesize")
     graph.add_edge("synthesize", END)

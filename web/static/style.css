@@ -230,6 +230,20 @@ button:active { transform: translateY(0) scale(0.99); }
 
 .feature-toggle { margin-top: 1rem; }
 
+.breadcrumb { margin: 0 0 0.75rem; }
+.breadcrumb a { color: var(--subtle); text-decoration: none; font-size: 0.9rem; }
+.breadcrumb a:hover { color: var(--accent-1); }
+
+.followups { margin: 2rem 0; }
+.followups ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.followups a { color: var(--fg); text-decoration: none; }
+.followups a:hover { color: var(--accent-1); }
+
+.followup-section { margin: 2.5rem 0; }
+.followup-section .question-form { flex-direction: row; margin: 1rem 0 0; padding: 1rem; }
+.followup-section .question-form input { flex: 1; }
+.followup-section .question-form button { align-self: stretch; }
+
 .feature-button {
   padding: 0.4rem 0.9rem;
   background: transparent;

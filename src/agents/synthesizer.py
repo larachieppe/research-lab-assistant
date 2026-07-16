@@ -28,7 +28,16 @@ citations. When two or more papers support the same point, cite them
 together in that sentence (e.g. "...off-target rates rise with mismatch
 count [1][2]." rather than splitting them across separate sentences) - it
 makes it clear which evidence agrees. Do not include a references section
-yourself; just the body text."""
+yourself; just the body text.
+
+When the evidence actually disagrees - different effect sizes, opposite
+conclusions, or findings that only hold for a different population or
+setting - say so explicitly rather than blending it into one confident-
+sounding answer (e.g. "One study found X [1], while another found no such
+effect [2], possibly because it looked at Y instead."). Only point out
+disagreement that is really there in the evidence; don't manufacture
+tension between findings that are simply about different aspects of the
+question."""
 
 
 @dataclass
@@ -45,7 +54,13 @@ def _source_label(paper: Paper) -> str:
     return "PUBMED"
 
 
-def synthesize_summary(question: str, papers: list[Paper], findings: list[Finding]) -> Synthesis:
+def synthesize_summary(
+    question: str,
+    papers: list[Paper],
+    findings: list[Finding],
+    previous_question: str | None = None,
+    previous_summary: str | None = None,
+) -> Synthesis:
     findings_by_paper = {f.paper_id: f for f in findings}
     cited_papers = [p for p in papers if findings_by_paper.get(p.id) and findings_by_paper[p.id].claims]
 
@@ -65,9 +80,21 @@ def synthesize_summary(question: str, papers: list[Paper], findings: list[Findin
         for p in cited_papers
     )
 
+    followup_context = (
+        f"This is a follow-up to an earlier question in the same conversation - "
+        f"the earlier question was: \"{previous_question}\"\n\n"
+        f"The earlier answer was:\n{previous_summary}\n\n"
+        "Write the new answer as a natural continuation: build on the earlier "
+        "answer where relevant instead of repeating it, but don't assume the "
+        "reader has it in front of them.\n\n"
+        if previous_question and previous_summary
+        else ""
+    )
+
     body = call_text(
         system=_SYSTEM,
         user=(
+            f"{followup_context}"
             f"Research question: {question}\n\n"
             f"Evidence extracted from papers:\n{evidence_block}\n\n"
             "Write a clear, plain-language answer (2-4 short paragraphs) to the "
