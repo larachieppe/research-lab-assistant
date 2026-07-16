@@ -48,8 +48,7 @@ def filter_relevant_papers(question: str, papers: list[Paper]) -> list[str]:
         return []
 
     listing = "\n".join(
-        f"[{p.id}] {p.title} ({p.year or 'n.d.'})\n"
-        f"Abstract: {p.abstract or '(no abstract available)'}"
+        f"[{p.id}] {p.title} ({p.year or 'n.d.'})\nAbstract: {p.abstract or '(no abstract available)'}"
         for p in papers
     )
 

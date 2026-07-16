@@ -23,8 +23,12 @@ def main() -> None:
         description="Search PubMed and arXiv, extract findings, and synthesize a cited summary."
     )
     parser.add_argument("question", help="Research question to investigate")
-    parser.add_argument("--max-papers", type=int, default=12, help="Max total papers to retrieve (default: 12)")
-    parser.add_argument("--max-queries", type=int, default=5, help="Max search queries to generate (default: 5)")
+    parser.add_argument(
+        "--max-papers", type=int, default=12, help="Max total papers to retrieve (default: 12)"
+    )
+    parser.add_argument(
+        "--max-queries", type=int, default=5, help="Max search queries to generate (default: 5)"
+    )
     parser.add_argument("--no-save", action="store_true", help="Don't save the report to outputs/")
     args = parser.parse_args()
 

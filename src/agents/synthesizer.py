@@ -41,9 +41,21 @@ question."""
 
 
 @dataclass
+class ReferenceEntry:
+    number: int
+    title: str
+    authors: list[str]
+    year: int | None
+    source: str
+    publication_types: list[str]
+    url: str
+
+
+@dataclass
 class Synthesis:
     markdown: str
     graph: EvidenceGraph | None
+    references: list[ReferenceEntry]
 
 
 def _source_label(paper: Paper) -> str:
@@ -67,9 +79,9 @@ def synthesize_summary(
     if not cited_papers:
         markdown = (
             f"No relevant findings were extracted from the retrieved papers for: "
-            f"\"{question}\"\n\nTry rephrasing the question or increasing --max-papers."
+            f'"{question}"\n\nTry rephrasing the question or increasing --max-papers.'
         )
-        return Synthesis(markdown=markdown, graph=None)
+        return Synthesis(markdown=markdown, graph=None, references=[])
 
     citation_number = {p.id: i + 1 for i, p in enumerate(cited_papers)}
 
@@ -82,7 +94,7 @@ def synthesize_summary(
 
     followup_context = (
         f"This is a follow-up to an earlier question in the same conversation - "
-        f"the earlier question was: \"{previous_question}\"\n\n"
+        f'the earlier question was: "{previous_question}"\n\n'
         f"The earlier answer was:\n{previous_summary}\n\n"
         "Write the new answer as a natural continuation: build on the earlier "
         "answer where relevant instead of repeating it, but don't assume the "
@@ -114,4 +126,17 @@ def synthesize_summary(
     markdown = f"{body}\n\n## References\n{references}\n"
     graph = build_evidence_graph(body, cited_papers, citation_number) if len(cited_papers) >= 2 else None
 
-    return Synthesis(markdown=markdown, graph=graph)
+    reference_entries = [
+        ReferenceEntry(
+            number=citation_number[p.id],
+            title=p.title,
+            authors=p.authors,
+            year=p.year,
+            source=p.source,
+            publication_types=p.publication_types,
+            url=p.url,
+        )
+        for p in cited_papers
+    ]
+
+    return Synthesis(markdown=markdown, graph=graph, references=reference_entries)

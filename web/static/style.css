@@ -123,6 +123,12 @@ h1, h2, h3, .brand {
 
 .topbar nav a:hover { background: var(--bg-elevated); color: var(--fg); }
 
+@media (max-width: 480px) {
+  .topbar { padding: 0.9rem 1.1rem; flex-wrap: wrap; row-gap: 0.5rem; }
+  .topbar .brand { font-size: 1rem; }
+  .topbar nav a { padding: 0.4rem 0.65rem; font-size: 0.8rem; }
+}
+
 .container {
   max-width: 780px;
   margin: 0 auto;
@@ -153,11 +159,18 @@ h1, h2, h3, .brand {
   padding: 1.5rem 1.75rem;
 }
 
+.ask-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
 .question-form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  margin: 0 0 3rem;
+  margin: 0;
   background: var(--bg-elevated);
   backdrop-filter: blur(20px);
   border: 1px solid var(--border);
@@ -165,6 +178,16 @@ h1, h2, h3, .brand {
   padding: 1.75rem;
   animation: fadeUp 0.6s ease 0.08s both;
 }
+
+@media (min-width: 860px) {
+  .ask-layout { flex-direction: row; align-items: flex-start; }
+  .ask-layout .question-form { flex: 1; min-width: 0; }
+  .ask-layout .history-sidebar { width: 260px; flex-shrink: 0; }
+}
+
+.history-sidebar h2 { font-size: 0.95rem; }
+.history-sidebar .run-list { gap: 0.5rem; }
+.history-sidebar .run-list li { padding: 0.75rem 0.9rem; }
 
 .question-form label {
   font-size: 0.85rem;
@@ -334,6 +357,11 @@ h2 { font-size: 1.05rem; margin: 0 0 1rem; }
 
 .error { color: var(--danger); }
 
+.error-card { border-color: rgba(251, 113, 133, 0.3); }
+.error-title { color: var(--danger); font-weight: 600; margin: 0 0 0.4rem; }
+
+.empty-state { text-align: center; }
+
 .summary { margin-top: 0; line-height: 1.7; }
 .summary h2 { font-size: 1.1rem; }
 
@@ -341,9 +369,41 @@ h2 { font-size: 1.05rem; margin: 0 0 1rem; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.25rem;
-  padding: 3.5rem 1rem;
+  gap: 1.5rem;
+  padding: 3rem 1rem;
   text-align: center;
+}
+
+.loading-status {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.loading .spinner { width: 28px; height: 28px; }
+
+.skeleton-block {
+  align-self: stretch;
+  max-width: 34rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.skeleton-line {
+  height: 0.85rem;
+  border-radius: 6px;
+  background: var(--border);
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+
+.skeleton-line:nth-child(2) { animation-delay: 0.15s; }
+.skeleton-line:nth-child(3) { animation-delay: 0.3s; }
+.skeleton-line:nth-child(4) { animation-delay: 0.45s; }
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }
 
 .spinner {
@@ -354,6 +414,14 @@ h2 { font-size: 1.05rem; margin: 0 0 1rem; }
   border-top-color: var(--accent-1);
   border-right-color: var(--accent-2);
   animation: spin 0.8s linear infinite;
+}
+
+.stage-label {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin: 0;
+  animation: fadeUp 0.3s ease both;
 }
 
 .cite-marker {
@@ -430,6 +498,8 @@ h2 { font-size: 1.05rem; margin: 0 0 1rem; }
   border-radius: var(--radius);
 }
 
+.references h2 { font-size: 1rem; margin-top: 0; }
+
 .references ol { padding-left: 1.4rem; margin: 0; }
 .references li {
   padding: 0.2rem 0;
@@ -438,6 +508,60 @@ h2 { font-size: 1.05rem; margin: 0 0 1rem; }
 }
 .references li.highlighted { background: rgba(34, 211, 238, 0.15); }
 .references li.dimmed { opacity: 0.4; }
+
+.reference-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.paper-card {
+  padding: 1rem 1.1rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  animation: fadeUp 0.5s ease both;
+}
+
+.reference-list li:nth-child(2) { animation-delay: 0.05s; }
+.reference-list li:nth-child(3) { animation-delay: 0.1s; }
+.reference-list li:nth-child(4) { animation-delay: 0.15s; }
+.reference-list li:nth-child(n+5) { animation-delay: 0.2s; }
+
+.paper-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.45rem;
+}
+
+.paper-badge {
+  display: inline-flex;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.paper-badge-pubmed { background: rgba(139, 92, 246, 0.15); color: var(--accent-1); }
+.paper-badge-arxiv { background: rgba(34, 211, 238, 0.15); color: var(--accent-2); }
+
+.paper-card-title { font-weight: 600; margin: 0 0 0.25rem; line-height: 1.4; }
+.paper-card-authors { margin: 0 0 0.3rem; }
+.paper-card-type { margin: 0 0 0.55rem; font-size: 0.82rem; color: var(--subtle); }
+
+.paper-card-link {
+  font-size: 0.85rem;
+  color: var(--accent-2);
+  text-decoration: none;
+  font-weight: 500;
+}
+.paper-card-link:hover { text-decoration: underline; }
 
 .login-body {
   min-height: 100vh;

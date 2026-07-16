@@ -33,11 +33,7 @@ def extract_findings(question: str, paper: Paper) -> Finding:
 
     result = call_structured(
         system=_SYSTEM,
-        user=(
-            f"Research question: {question}\n\n"
-            f"Paper title: {paper.title}\n"
-            f"Abstract: {paper.abstract}"
-        ),
+        user=(f"Research question: {question}\n\nPaper title: {paper.title}\nAbstract: {paper.abstract}"),
         tool_name="submit_findings",
         tool_description="Submit the extracted findings for this paper.",
         input_schema=_INPUT_SCHEMA,

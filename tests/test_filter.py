@@ -5,7 +5,9 @@ from src.state import Paper
 
 
 def _paper(id_: str) -> Paper:
-    return Paper(id=id_, source="pubmed", title=f"Title {id_}", authors=[], year=2024, abstract="abstract", url="")
+    return Paper(
+        id=id_, source="pubmed", title=f"Title {id_}", authors=[], year=2024, abstract="abstract", url=""
+    )
 
 
 def test_drops_hallucinated_ids_not_in_candidate_set():

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TypedDict
+from typing import TYPE_CHECKING, TypedDict
+
+if TYPE_CHECKING:
+    from src.agents.synthesizer import ReferenceEntry
 
 
 @dataclass
@@ -62,3 +65,4 @@ class AgentState(TypedDict, total=False):
     excluded_retracted_count: int
     previous_question: str
     previous_summary: str
+    references: list[ReferenceEntry]

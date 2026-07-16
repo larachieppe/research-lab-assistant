@@ -104,7 +104,11 @@ def extract_node(state: AgentState) -> dict:
 
 def synthesize_node(state: AgentState) -> dict:
     synthesis = synthesize_summary(state["question"], state["papers"], state["findings"])
-    return {"summary": synthesis.markdown, "evidence_graph": synthesis.graph}
+    return {
+        "summary": synthesis.markdown,
+        "evidence_graph": synthesis.graph,
+        "references": synthesis.references,
+    }
 
 
 def synthesize_followup_node(state: AgentState) -> dict:
@@ -115,7 +119,11 @@ def synthesize_followup_node(state: AgentState) -> dict:
         previous_question=state.get("previous_question"),
         previous_summary=state.get("previous_summary"),
     )
-    return {"summary": synthesis.markdown, "evidence_graph": synthesis.graph}
+    return {
+        "summary": synthesis.markdown,
+        "evidence_graph": synthesis.graph,
+        "references": synthesis.references,
+    }
 
 
 def build_graph():

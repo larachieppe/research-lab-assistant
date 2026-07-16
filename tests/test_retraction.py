@@ -4,7 +4,13 @@ from src.tools.retraction import exclude_retracted
 
 def _paper(id_: str, retracted: bool = False) -> Paper:
     return Paper(
-        id=id_, source="pubmed", title=f"Title {id_}", authors=[], year=2024, abstract="", url="",
+        id=id_,
+        source="pubmed",
+        title=f"Title {id_}",
+        authors=[],
+        year=2024,
+        abstract="",
+        url="",
         retracted=retracted,
     )
 

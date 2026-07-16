@@ -22,7 +22,5 @@ def test_parsed_paper_has_expected_fields():
 
 
 def test_handles_empty_feed():
-    empty_atom = (
-        b'<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"></feed>'
-    )
+    empty_atom = b'<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"></feed>'
     assert parse_arxiv_atom(empty_atom) == []

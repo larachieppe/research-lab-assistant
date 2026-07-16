@@ -17,6 +17,9 @@
       {% endfor %}
     </ul>
   {% else %}
-    <p class="subtle">No runs yet. <a href="/">Ask a question</a> to get started.</p>
+    <div class="card empty-state">
+      <p>No runs yet.</p>
+      <p class="subtle"><a href="/ask">Ask a question</a> to get started.</p>
+    </div>
   {% endif %}
 {% endblock %}

@@ -27,3 +27,35 @@ jobs:
 
       - name: Run tests
         run: pytest tests/ -v
+
+      - name: Lint and format check
+        if: matrix.python-version == '3.12'
+        run: |
+          pip install ruff
+          ruff check .
+          ruff format --check .
+
+      - name: Audit dependencies for known vulnerabilities
+        # Only needs to run once - it's checking requirements.txt, not
+        # anything Python-version-specific.
+        if: matrix.python-version == '3.12'
+        run: |
+          pip install pip-audit
+          # Ignored: fixes are all major-version bumps of core deps
+          # (langgraph 0.x->1.x, starlette 0.x->1.x via fastapi, pytest
+          # 8->9) that need their own dedicated upgrade+regression-test
+          # pass, not something to silently pull in here. Everything else
+          # (including future new findings) still fails the build.
+          pip-audit -r requirements.txt \
+            --ignore-vuln PYSEC-2026-83 \
+            --ignore-vuln PYSEC-2026-1845 \
+            --ignore-vuln PYSEC-2026-1527 \
+            --ignore-vuln PYSEC-2026-2573 \
+            --ignore-vuln PYSEC-2026-2574 \
+            --ignore-vuln PYSEC-2026-2575 \
+            --ignore-vuln PYSEC-2026-161 \
+            --ignore-vuln PYSEC-2026-249 \
+            --ignore-vuln PYSEC-2026-248 \
+            --ignore-vuln PYSEC-2026-1942 \
+            --ignore-vuln PYSEC-2026-2281 \
+            --ignore-vuln PYSEC-2026-2280

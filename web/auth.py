@@ -8,10 +8,11 @@ from __future__ import annotations
 import secrets
 
 from authlib.integrations.starlette_client import OAuth
-from fastapi import APIRouter, Form, Request
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 
 from src.config import Settings, load_settings
+from web.ratelimit import rate_limit
 from web.templating import templates
 
 router = APIRouter()
@@ -83,7 +84,7 @@ def login_page(request: Request):
     )
 
 
-@router.post("/login")
+@router.post("/login", dependencies=[Depends(rate_limit(10, 300, "login"))])
 def login_submit(request: Request, username: str = Form(...), password: str = Form(...)):
     settings = load_settings()
     if _valid_password_login(settings, username, password):

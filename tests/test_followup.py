@@ -66,7 +66,9 @@ def _logged_in_client() -> TestClient:
 def test_followup_without_a_session_redirects_to_login():
     run_id = _make_run()
     client = TestClient(app)
-    response = client.post(f"/runs/{run_id}/followup", data={"question": "follow up?"}, follow_redirects=False)
+    response = client.post(
+        f"/runs/{run_id}/followup", data={"question": "follow up?"}, follow_redirects=False
+    )
     assert response.status_code == 303
     assert response.headers["location"] == "/login"
 
@@ -74,7 +76,9 @@ def test_followup_without_a_session_redirects_to_login():
 def test_followup_creates_a_child_run_with_parent_link():
     run_id = _make_run()
     client = _logged_in_client()
-    response = client.post(f"/runs/{run_id}/followup", data={"question": "follow up?"}, follow_redirects=False)
+    response = client.post(
+        f"/runs/{run_id}/followup", data={"question": "follow up?"}, follow_redirects=False
+    )
     assert response.status_code == 303
     location = response.headers["location"]
     assert location.startswith("/runs/")
@@ -98,11 +102,15 @@ def test_followup_rejects_empty_question():
 def test_followup_on_run_without_papers_json_is_rejected():
     run_id = _make_run(papers_json=None)
     client = _logged_in_client()
-    response = client.post(f"/runs/{run_id}/followup", data={"question": "follow up?"}, follow_redirects=False)
+    response = client.post(
+        f"/runs/{run_id}/followup", data={"question": "follow up?"}, follow_redirects=False
+    )
     assert response.status_code == 400
 
 
 def test_followup_on_missing_run_is_404():
     client = _logged_in_client()
-    response = client.post(f"/runs/{uuid.uuid4()}/followup", data={"question": "follow up?"}, follow_redirects=False)
+    response = client.post(
+        f"/runs/{uuid.uuid4()}/followup", data={"question": "follow up?"}, follow_redirects=False
+    )
     assert response.status_code == 404

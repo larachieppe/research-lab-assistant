@@ -10,32 +10,38 @@
     </p>
   </section>
 
-  <form action="/runs" method="post" class="question-form">
-    <label for="question">Research question</label>
-    <textarea id="question" name="question" rows="3" required
-      placeholder="How does CRISPR-Cas9 off-target activity vary with guide RNA design?"></textarea>
+  <div class="ask-layout">
+    <form action="/runs" method="post" class="question-form">
+      <label for="question">Research question</label>
+      <textarea id="question" name="question" rows="3" required
+        placeholder="How does CRISPR-Cas9 off-target activity vary with guide RNA design?"></textarea>
 
-    <div class="form-row">
-      <label for="max_papers">Max papers
-        <input id="max_papers" name="max_papers" type="number" min="2" max="20" value="12">
-      </label>
-      <label for="max_queries">Max search queries
-        <input id="max_queries" name="max_queries" type="number" min="1" max="6" value="5">
-      </label>
-    </div>
+      <div class="form-row">
+        <label for="max_papers">Max papers
+          <input id="max_papers" name="max_papers" type="number" min="2" max="20" value="12">
+        </label>
+        <label for="max_queries">Max search queries
+          <input id="max_queries" name="max_queries" type="number" min="1" max="6" value="5">
+        </label>
+      </div>
 
-    <button type="submit">Run research pipeline</button>
-  </form>
+      <button type="submit">Run research pipeline</button>
+    </form>
 
-  {% if recent_runs %}
-    <h2>Recent runs</h2>
-    <ul class="run-list">
-      {% for run in recent_runs %}
-        <li>
-          <a href="/runs/{{ run.id }}">{{ run.question }}</a>
-          <span class="status status-{{ run.status }}">{{ run.status }}</span>
-        </li>
-      {% endfor %}
-    </ul>
-  {% endif %}
+    {% if recent_runs %}
+      <aside class="history-sidebar">
+        <h2>Recent runs</h2>
+        <ul class="run-list">
+          {% for run in recent_runs %}
+            <li>
+              <div class="run-card-main">
+                <a href="/runs/{{ run.id }}">{{ run.question }}</a>
+              </div>
+              <span class="status status-{{ run.status }}">{{ run.status }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      </aside>
+    {% endif %}
+  </div>
 {% endblock %}

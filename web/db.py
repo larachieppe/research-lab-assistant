@@ -12,13 +12,13 @@ expose the same seven functions and always return plain dicts, so callers
 from __future__ import annotations
 
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 if DATABASE_URL:
@@ -46,7 +46,9 @@ if DATABASE_URL:
                     excluded_retracted_count INTEGER,
                     featured BOOLEAN NOT NULL DEFAULT FALSE,
                     parent_run_id TEXT,
-                    papers_json TEXT
+                    papers_json TEXT,
+                    stage TEXT,
+                    references_json TEXT
                 )
                 """
             )
@@ -57,6 +59,8 @@ if DATABASE_URL:
             conn.execute("ALTER TABLE runs ADD COLUMN IF NOT EXISTS featured BOOLEAN NOT NULL DEFAULT FALSE")
             conn.execute("ALTER TABLE runs ADD COLUMN IF NOT EXISTS parent_run_id TEXT")
             conn.execute("ALTER TABLE runs ADD COLUMN IF NOT EXISTS papers_json TEXT")
+            conn.execute("ALTER TABLE runs ADD COLUMN IF NOT EXISTS stage TEXT")
+            conn.execute("ALTER TABLE runs ADD COLUMN IF NOT EXISTS references_json TEXT")
 
     def create_run(
         run_id: str,
@@ -78,22 +82,36 @@ if DATABASE_URL:
         with _get_conn() as conn:
             conn.execute("UPDATE runs SET status = 'running' WHERE id = %s", (run_id,))
 
+    def update_stage(run_id: str, stage: str) -> None:
+        with _get_conn() as conn:
+            conn.execute("UPDATE runs SET stage = %s WHERE id = %s", (stage, run_id))
+
     def mark_completed(
         run_id: str,
         summary: str,
         evidence_graph_json: str | None = None,
         excluded_retracted_count: int = 0,
         papers_json: str | None = None,
+        references_json: str | None = None,
     ) -> None:
         with _get_conn() as conn:
             conn.execute(
                 """
                 UPDATE runs
                 SET status = 'completed', summary = %s, evidence_graph_json = %s,
-                    excluded_retracted_count = %s, papers_json = %s, completed_at = %s
+                    excluded_retracted_count = %s, papers_json = %s, references_json = %s,
+                    completed_at = %s
                 WHERE id = %s
                 """,
-                (summary, evidence_graph_json, excluded_retracted_count, papers_json, _now(), run_id),
+                (
+                    summary,
+                    evidence_graph_json,
+                    excluded_retracted_count,
+                    papers_json,
+                    references_json,
+                    _now(),
+                    run_id,
+                ),
             )
 
     def mark_failed(run_id: str, error: str) -> None:
@@ -109,9 +127,7 @@ if DATABASE_URL:
 
     def list_runs(limit: int = 50) -> list[dict]:
         with _get_conn() as conn:
-            return conn.execute(
-                "SELECT * FROM runs ORDER BY created_at DESC LIMIT %s", (limit,)
-            ).fetchall()
+            return conn.execute("SELECT * FROM runs ORDER BY created_at DESC LIMIT %s", (limit,)).fetchall()
 
     def set_featured(run_id: str, featured: bool) -> None:
         with _get_conn() as conn:
@@ -136,9 +152,9 @@ if DATABASE_URL:
 
 else:
     import sqlite3
+    from collections.abc import Iterator
     from contextlib import contextmanager
     from pathlib import Path
-    from typing import Iterator
 
     DB_PATH = Path(os.environ.get("RUNS_DB_PATH", Path(__file__).resolve().parent.parent / "runs.db"))
 
@@ -180,6 +196,10 @@ else:
                 conn.execute("ALTER TABLE runs ADD COLUMN parent_run_id TEXT")
             if "papers_json" not in existing_columns:
                 conn.execute("ALTER TABLE runs ADD COLUMN papers_json TEXT")
+            if "stage" not in existing_columns:
+                conn.execute("ALTER TABLE runs ADD COLUMN stage TEXT")
+            if "references_json" not in existing_columns:
+                conn.execute("ALTER TABLE runs ADD COLUMN references_json TEXT")
 
     def create_run(
         run_id: str,
@@ -201,22 +221,36 @@ else:
         with _get_conn() as conn:
             conn.execute("UPDATE runs SET status = 'running' WHERE id = ?", (run_id,))
 
+    def update_stage(run_id: str, stage: str) -> None:
+        with _get_conn() as conn:
+            conn.execute("UPDATE runs SET stage = ? WHERE id = ?", (stage, run_id))
+
     def mark_completed(
         run_id: str,
         summary: str,
         evidence_graph_json: str | None = None,
         excluded_retracted_count: int = 0,
         papers_json: str | None = None,
+        references_json: str | None = None,
     ) -> None:
         with _get_conn() as conn:
             conn.execute(
                 """
                 UPDATE runs
                 SET status = 'completed', summary = ?, evidence_graph_json = ?,
-                    excluded_retracted_count = ?, papers_json = ?, completed_at = ?
+                    excluded_retracted_count = ?, papers_json = ?, references_json = ?,
+                    completed_at = ?
                 WHERE id = ?
                 """,
-                (summary, evidence_graph_json, excluded_retracted_count, papers_json, _now(), run_id),
+                (
+                    summary,
+                    evidence_graph_json,
+                    excluded_retracted_count,
+                    papers_json,
+                    references_json,
+                    _now(),
+                    run_id,
+                ),
             )
 
     def mark_failed(run_id: str, error: str) -> None:
@@ -233,9 +267,7 @@ else:
 
     def list_runs(limit: int = 50) -> list[dict]:
         with _get_conn() as conn:
-            rows = conn.execute(
-                "SELECT * FROM runs ORDER BY created_at DESC LIMIT ?", (limit,)
-            ).fetchall()
+            rows = conn.execute("SELECT * FROM runs ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
             return [dict(row) for row in rows]
 
     def set_featured(run_id: str, featured: bool) -> None:

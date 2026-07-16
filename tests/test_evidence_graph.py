@@ -3,7 +3,15 @@ from src.tools.evidence_graph import build_evidence_graph
 
 
 def _paper(id_: str) -> Paper:
-    return Paper(id=id_, source="pubmed", title=f"Title {id_}", authors=[], year=2024, abstract="", url=f"http://x/{id_}")
+    return Paper(
+        id=id_,
+        source="pubmed",
+        title=f"Title {id_}",
+        authors=[],
+        year=2024,
+        abstract="",
+        url=f"http://x/{id_}",
+    )
 
 
 def test_builds_one_node_per_cited_paper():

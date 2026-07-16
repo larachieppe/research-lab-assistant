@@ -8,20 +8,20 @@
     const res = await fetch(`/api/runs/${RUN_ID}`);
     if (!res.ok) return;
     const data = await res.json();
+    const isActive = data.status === "pending" || data.status === "running";
+    const statusChanged = data.status !== badge.textContent.trim();
 
-    if (data.status === badge.textContent.trim()) {
-      if (data.status === "pending" || data.status === "running") {
-        setTimeout(poll, 2000);
-      }
-      return;
+    // Re-render on every tick while active, not just on a status change -
+    // the stage label updates (e.g. "Screening N papers") without the
+    // pending/running status itself ever changing.
+    if (statusChanged || isActive) {
+      badge.textContent = data.status;
+      badge.className = `status status-${data.status}`;
+      result.innerHTML = data.html;
+      if (window.initEvidenceMap) window.initEvidenceMap();
     }
 
-    badge.textContent = data.status;
-    badge.className = `status status-${data.status}`;
-    result.innerHTML = data.html;
-    if (window.initEvidenceMap) window.initEvidenceMap();
-
-    if (data.status === "pending" || data.status === "running") {
+    if (isActive) {
       setTimeout(poll, 2000);
     }
   }

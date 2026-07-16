@@ -48,9 +48,7 @@ def parse_pubmed_xml(xml_bytes: bytes) -> list[Paper]:
         title_el = article.find(".//ArticleTitle")
         title = "".join(title_el.itertext()).strip() if title_el is not None else "(no title)"
 
-        abstract_parts = [
-            "".join(node.itertext()) for node in article.findall(".//Abstract/AbstractText")
-        ]
+        abstract_parts = ["".join(node.itertext()) for node in article.findall(".//Abstract/AbstractText")]
         abstract = " ".join(part.strip() for part in abstract_parts if part.strip())
 
         authors: list[str] = []

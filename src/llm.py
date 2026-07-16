@@ -34,9 +34,7 @@ _retry = retry(
 def _client() -> anthropic.Anthropic:
     settings = load_settings()
     if not settings.anthropic_api_key:
-        raise RuntimeError(
-            "ANTHROPIC_API_KEY is not set. Copy .env.example to .env and add your key."
-        )
+        raise RuntimeError("ANTHROPIC_API_KEY is not set. Copy .env.example to .env and add your key.")
     return anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
 

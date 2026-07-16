@@ -70,3 +70,24 @@ def test_authenticated_user_can_toggle_featured():
     assert response.status_code == 303
     assert response.headers["location"] == f"/runs/{run_id}"
     assert db.get_run(run_id)["featured"]
+
+
+def test_raw_html_in_llm_summary_is_stripped_from_rendered_run():
+    # Untrusted paper abstracts flow into the LLM's synthesis context, so a
+    # prompt-injection payload could get echoed back as raw HTML. Simulates
+    # that worst case directly rather than relying on the LLM behaving.
+    run_id = str(uuid.uuid4())
+    db.create_run(run_id, "XSS test question", 8, 4)
+    db.mark_completed(
+        run_id,
+        '<script>alert(1)</script><img src=x onerror="alert(2)"> Some answer [1].'
+        "\n\n## References\n1. Paper. Author. 2024. PUBMED. http://x",
+    )
+    db.set_featured(run_id, True)
+
+    client = TestClient(app)
+    response = client.get(f"/runs/{run_id}")
+    assert response.status_code == 200
+    assert "<script>" not in response.text
+    assert "onerror" not in response.text
+    assert "Some answer" in response.text
