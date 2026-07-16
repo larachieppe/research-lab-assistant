@@ -1,10 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, TypedDict
-
-if TYPE_CHECKING:
-    from src.agents.synthesizer import ReferenceEntry
+from typing import TypedDict
 
 
 @dataclass
@@ -50,6 +47,17 @@ class EvidenceEdge:
 class EvidenceGraph:
     nodes: list[EvidenceNode]
     edges: list[EvidenceEdge]
+
+
+@dataclass
+class ReferenceEntry:
+    number: int
+    title: str
+    authors: list[str]
+    year: int | None
+    source: str
+    publication_types: list[str]
+    url: str
 
 
 class AgentState(TypedDict, total=False):

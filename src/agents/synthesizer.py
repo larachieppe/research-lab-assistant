@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from src.llm import call_text
-from src.state import EvidenceGraph, Finding, Paper
+from src.state import EvidenceGraph, Finding, Paper, ReferenceEntry
 from src.tools.evidence_graph import build_evidence_graph
 
 _SYSTEM = """You are explaining research findings to a smart, curious reader
@@ -38,17 +38,6 @@ effect [2], possibly because it looked at Y instead."). Only point out
 disagreement that is really there in the evidence; don't manufacture
 tension between findings that are simply about different aspects of the
 question."""
-
-
-@dataclass
-class ReferenceEntry:
-    number: int
-    title: str
-    authors: list[str]
-    year: int | None
-    source: str
-    publication_types: list[str]
-    url: str
 
 
 @dataclass
