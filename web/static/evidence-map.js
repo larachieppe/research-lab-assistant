@@ -311,9 +311,6 @@ function setupHighlighting(root, evidenceGraph) {
       const cn = idx + 1;
       const related = active && active.has(cn);
       toggle(li, active, related);
-      if (n !== null && cn === n) {
-        li.scrollIntoView({ block: "nearest", behavior: "smooth" });
-      }
     });
   }
 
