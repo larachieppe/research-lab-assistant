@@ -248,6 +248,18 @@ def _render_result_fragment(run: dict) -> str:
     return templates.env.get_template("_result.html").render(run=_render_run(run))
 
 
+@app.get("/version")
+def version():
+    # Render sets RENDER_GIT_COMMIT automatically for every deploy - reading
+    # it back lets a deploy be verified with one curl instead of guessing
+    # from indirect signals like whether a new CSS class has shown up yet.
+    commit = os.environ.get("RENDER_GIT_COMMIT")
+    return {
+        "commit": commit[:7] if commit else "local",
+        "on_render": _ON_RENDER,
+    }
+
+
 @app.get("/")
 def showcase(request: Request):
     return templates.TemplateResponse(

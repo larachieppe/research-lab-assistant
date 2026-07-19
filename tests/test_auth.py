@@ -36,6 +36,15 @@ def test_showcase_is_public_without_a_session():
     assert response.status_code == 200
 
 
+def test_version_is_public_and_reports_local_when_render_commit_unset():
+    client = TestClient(app)
+    response = client.get("/version", follow_redirects=False)
+    assert response.status_code == 200
+    data = response.json()
+    assert "commit" in data
+    assert "on_render" in data
+
+
 def test_login_page_renders_without_google_button_when_unconfigured():
     with patch("web.auth.load_settings", return_value=_settings()):
         client = TestClient(app)

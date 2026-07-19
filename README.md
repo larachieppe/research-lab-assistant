@@ -183,6 +183,16 @@ something to bolt on silently:
   `pydantic-settings` instead of the current plain dataclass) for easier
   self-hosting.
 
+Known limitation worth being deliberate about: `run_detail.html` has a few
+sections (the follow-up form, "Feature on homepage" button, children list)
+that live outside the `#result` div `poll.js` patches, and are only
+rendered server-side at initial page load. A run that transitions from
+pending to completed on an already-open page now triggers a full reload
+so those sections reflect the real final state — but any *future* addition
+with a similar "only show once completed" condition will have the same
+fragility unless it also lives inside `#result` or the reload-on-completion
+behavior is kept in place.
+
 ## Local setup
 
 ```bash
@@ -324,6 +334,13 @@ alternative (upgrade `plan` to `starter`, ~$7/mo).
 
 Any other host that runs a standard ASGI app (Railway, Fly.io, etc.) works
 the same way — same build/start commands, same `DATABASE_URL` story.
+
+**Verifying a deploy actually landed**: `GET /version` returns the deployed
+commit (`{"commit": "abc1234", "on_render": true}`), read from Render's
+auto-populated `RENDER_GIT_COMMIT` env var. Also worth checking that
+**Auto-Deploy** is enabled for the service (Settings → Build & Deploy) —
+without it, pushes to `main` sit there until someone manually clicks
+Deploy in the dashboard.
 
 ## Tests
 
