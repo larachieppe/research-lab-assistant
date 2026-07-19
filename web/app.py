@@ -131,7 +131,10 @@ def _stream_with_stage_updates(run_id: str, graph, initial_state: dict, stage_af
     result: dict = {}
     for update in graph.stream(initial_state, stream_mode="updates"):
         for node_name, node_output in update.items():
-            result.update(node_output)
+            # A node that returns {} (e.g. filter_node's fail-open path)
+            # streams as None here, not {} - update() would crash on that.
+            if node_output:
+                result.update(node_output)
             label = stage_after.get(node_name)
             if label:
                 db.update_stage(run_id, label(result))
